@@ -1,0 +1,14 @@
+.entry-sidebar-container {
+  width: 100%;
+}
+.EmptyState__title {
+  font-size: 1rem !important;
+}
+
+.bp-accordion {
+  text-align: left;
+}
+
+.separator {
+  border: 0;
+}

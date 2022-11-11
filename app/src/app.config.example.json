@@ -1,0 +1,10 @@
+{
+  "name": "OAuth Example App",
+  "apiKey": "your_api_key",
+  "oauth": {
+    "authorizeUrl": "https://app.contentstack.com/#!/apps/{appId}/authorize",
+    "clientId": "your_client_id",
+    "responseType": "code",
+    "redirectUri": "your_redirect_url eg. http://localhost:3000/callback"
+  }
+}

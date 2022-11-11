@@ -1,0 +1,604 @@
+import {
+  ASSET_REGEXP,
+  IDataStatus,
+  IDictionary,
+  IEnvironmentConfig,
+  ILocaleConfig,
+  IProcessedItem,
+  IPublishStatus,
+  IReference,
+  OPERATIONS,
+  REF_REGEXP,
+} from "./models/models";
+import { Accordion, Button, InfiniteScrollTable, InstructionText, Tooltip } from "@contentstack/venus-components";
+import {
+  addLogErrorAtom,
+  addLogInfoAtom,
+  canRefreshAtom,
+  clearDataStatusAtom,
+  dataStatusAtom,
+  environmentsAtom,
+  loadingAtom,
+  localesAtom,
+  logAtom,
+  operationInProgressAtom,
+  reloadOnChangeLocalesAtom,
+  setDataStatusAtom,
+  showLogAtom,
+  showWarningMessageAtom,
+  warningMessageAtom,
+} from "./store";
+import { showError, showSuccessWithDetails } from "../../utils/notifications";
+
+import LogDetails from "./log-details";
+import React from "react";
+import { useAppSdk } from "../../hooks/useAppSdk";
+import { useAtom } from "jotai";
+import { useEntry } from "../../hooks/useEntry";
+import useUserSelections from "../../hooks/useUserSelections";
+
+export const SAVE_MESSAGE: string = "You need to save the entry, and reload the extension to update the references.";
+export const SAVED_MESSAGE: string = "Entry saved, you need to reload the extension to update the references.";
+
+function ReferencesTable() {
+  const [dataStatus, setDataStatus] = useAtom(dataStatusAtom);
+  const [, setLog] = useAtom(logAtom);
+  const [environments] = useAtom(environmentsAtom);
+  const [locales] = useAtom(localesAtom);
+
+  const [, setDataStatusPartial] = useAtom(setDataStatusAtom);
+  const [, clearDataStatus] = useAtom(clearDataStatusAtom);
+  const [operationInProgress, setOperationInProgress] = useAtom(operationInProgressAtom);
+  const [processingTracker, setProcessingTracker] = React.useState(0);
+  const [reloadOnChangeLocales] = useAtom(reloadOnChangeLocalesAtom);
+
+  const [loading, setLoading] = useAtom(loadingAtom);
+  const [, setShowLog] = useAtom(showLogAtom);
+  const [, addLogInfo] = useAtom(addLogInfoAtom);
+  const [, addLogError] = useAtom(addLogErrorAtom);
+  const [, setShowWarning] = useAtom(showWarningMessageAtom);
+  const [, setWarningMessage] = useAtom(warningMessageAtom);
+  const [, setCanRefresh] = useAtom(canRefreshAtom);
+
+  const [appSdk] = useAppSdk();
+  const { entryData: entry, contentTypeUid } = useEntry({
+    onChange: () => {
+      setShowWarning(true);
+      setWarningMessage(SAVE_MESSAGE);
+      setCanRefresh(false);
+    },
+    onSave: () => {
+      setShowWarning(true);
+      setWarningMessage(SAVED_MESSAGE);
+      setCanRefresh(true);
+    },
+  });
+  const { saveUserSelections } = useUserSelections();
+
+  const [viewBy, updateViewBy] = React.useState("Comfortable");
+  const processedItems = React.useRef<IProcessedItem[]>([]);
+
+  const getSelectedRow = (singleSelectedRowIds: any, selectedData: any) => {
+    let selectedObj: any = {};
+    singleSelectedRowIds.forEach((refUid: any) => {
+      selectedObj[refUid] = true;
+    });
+    setDataStatusPartial({ selectedReferences: { ...selectedObj } });
+  };
+
+  const showData = React.useCallback(
+    (data?: IReference[]) => {
+      if (dataStatus.allEntries && Object.keys(dataStatus.allEntries).length > 0) {
+        const d = data || Object.values(dataStatus.allEntries);
+        const statusMap: any = {};
+        const initiallySelectedMap: any = [];
+        d.forEach((_: any, index: number) => {
+          statusMap[index] = "loaded";
+        });
+        d.forEach((item: any) => {
+          initiallySelectedMap[item.uniqueKey] = true;
+        });
+        setLoading(false);
+        setProcessingTracker(0);
+        setOperationInProgress(OPERATIONS.NONE);
+        setDataStatusPartial({ data: d, statuses: statusMap, initiallySelected: initiallySelectedMap });
+      }
+    },
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [dataStatus.allEntries]
+  );
+
+  const getColumns = React.useCallback((): any => {
+    return [
+      {
+        Header: "Key",
+        id: "uniqueKey",
+        accessor: (data: any) => (
+          <div className="title-container">
+            <div className="content-title">{data.uniqueKey}</div>
+          </div>
+        ),
+        columnWidthMultiplier: 2,
+      },
+      {
+        Header: "Title",
+        id: "title",
+        accessor: (data: IReference) => {
+          return (
+            <div className="title-container">
+              <div className="content-title">
+                <strong>{data.entry?.title}</strong>
+              </div>
+              {viewBy === "Comfortable" && <InstructionText style={{ textAlign: "left" }}>{data.uid}</InstructionText>}
+            </div>
+          );
+        },
+        default: true,
+        columnWidthMultiplier: 2,
+      },
+      {
+        Header: "Locales",
+        id: "uid",
+        accessor: (data: any) => {
+          const isLocalized = data.locales && data.locales.some((locale: any) => locale.localized);
+          const tooltipContent = data.isAsset
+            ? `n/a`
+            : `${
+                isLocalized
+                  ? `Localized in: ${data.locales
+                      .filter((l: any) => l.localized)
+                      .map((l: any) => l.code)
+                      .join(", ")}`
+                  : `Not Localized`
+              }`;
+
+          return (
+            <Tooltip content={tooltipContent} position="top" showArrow={false}>
+              <>
+                <div className="title-container">
+                  <div className="content-title">{data.locale || `n/a (asset)`}</div>
+                </div>
+                {viewBy === "Comfortable" && (
+                  <InstructionText style={{ textAlign: "left" }}>
+                    {isLocalized ? "Localized" : "Not Localized"}
+                  </InstructionText>
+                )}
+              </>
+            </Tooltip>
+          );
+        },
+        columnWidthMultiplier: 1,
+      },
+    ];
+  }, [viewBy]);
+
+  const publishEntry = React.useCallback(
+    async (uid: string): Promise<IPublishStatus> => {
+      const entry = dataStatus.allEntries[uid];
+      let response: any;
+      let ll = locales?.filter((l) => l.checked).map((l) => l.code);
+
+      try {
+        if (entry.isAsset) {
+          response = await appSdk?.location?.SidebarWidget?.stack.Asset(entry.uid).publish({
+            asset: {
+              locales: ll,
+              environments: environments
+                ?.filter((e: IEnvironmentConfig) => e.checked)
+                .map((c: IEnvironmentConfig) => c.name),
+            },
+          });
+        } else {
+          ll = [entry.locale];
+          response = await appSdk?.location?.SidebarWidget?.stack
+            .ContentType(entry.content_type_uid)
+            .Entry(entry.uid)
+            .publish({
+              entry: {
+                locales: ll,
+                environments: environments
+                  ?.filter((e: IEnvironmentConfig) => e.checked)
+                  .map((c: IEnvironmentConfig) => c.name),
+              },
+            });
+        }
+        // showSuccess(`Published ${entry.isAsset ? "asset" : "entry"} ${entry.uid} in ${ll?.join(", ")}`);
+        addLogInfo(`Published ${entry.isAsset ? "asset" : "entry"} ${entry.uid} in ${ll?.join(", ")}`);
+        return {
+          uid: entry.uid,
+          content_type_uid: entry.isAsset ? "_asset" : entry.content_type_uid,
+          status: {
+            success: true,
+            payload: response,
+          },
+        };
+      } catch (e: any) {
+        console.log("Error:", entry.uid, e);
+        // showError(`Error publishing ${entry.isAsset ? "asset" : "entry"} ${entry.uid} in ${ll?.join(", ")}`);
+        addLogError(`Error publishing ${entry.isAsset ? "asset" : "entry"} ${entry.uid} in ${ll?.join(", ")}`);
+        return {
+          uid: entry.uid,
+          content_type_uid: entry.isAsset ? "_asset" : entry.content_type_uid,
+          status: {
+            success: false,
+            payload: e,
+          },
+        };
+      }
+    },
+    //Jaime: we might need to use extensionConfig
+    [dataStatus.allEntries, locales, environments, addLogInfo, appSdk?.location?.SidebarWidget?.stack, addLogError]
+  );
+
+  const publishEntries = React.useCallback(
+    (keys: string[]) => {
+      setOperationInProgress(OPERATIONS.PUBLISHING);
+
+      const promises: any = [];
+      setLog([]);
+      keys.forEach((key: string) => {
+        promises.push(publishEntry(key));
+      });
+
+      Promise.all(promises)
+        .then((results: IPublishStatus[]) => {
+          setOperationInProgress(OPERATIONS.NONE);
+          // console.log("Publish results", results);
+          showSuccessWithDetails(
+            "Publishing Completed!",
+            () => {
+              setShowLog(true);
+            },
+            `${results.length} entries published to ${environments
+              .filter((e: IEnvironmentConfig) => e.checked)
+              .map((c: IEnvironmentConfig) => c.name)
+              .join(", ")}`
+          );
+        })
+        .catch((error) => {
+          console.log("Publishing Error:", error);
+        });
+    },
+    [environments, publishEntry, setLog, setOperationInProgress, setShowLog]
+  );
+
+  const clearStatus = React.useCallback(
+    (clearTracker: boolean = false) => {
+      if (clearTracker) {
+        processedItems.current = [];
+      }
+      clearDataStatus();
+    },
+    [clearDataStatus]
+  );
+
+  const pushItem = React.useCallback((item: IReference, completed: boolean = false): void => {
+    let idx = -1;
+    if (item.isAsset) {
+      idx = processedItems.current.findIndex((i) => i.id === item.uid);
+    } else {
+      idx = processedItems.current.findIndex((i) => i.id === item.uid && i.locale === item.locale);
+    }
+
+    if (idx <= -1) {
+      const theItem = {
+        id: item.uid,
+        locale: item.locale,
+        completed: completed,
+      };
+
+      processedItems.current.push(theItem);
+    }
+  }, []);
+
+  const getAsset = React.useCallback(
+    async (uid: string): Promise<IReference> => {
+      const response = await appSdk?.location?.SidebarWidget?.stack.Asset(uid).fetch();
+      return {
+        uniqueKey: `${response.asset.uid}`,
+        uid: response.asset.uid,
+        isAsset: true,
+        content_type_uid: "_asset",
+        entry: response.asset,
+        locale: "",
+        references: [],
+      };
+    },
+    //TODO: add dependencies
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    []
+  );
+
+  const addEntry = React.useCallback(
+    (entry: IReference) => {
+      setDataStatus((ds: IDataStatus) => {
+        let all: IDictionary<IReference> = {};
+        const key = `${entry.uid}${entry.isAsset ? `` : `_${entry.locale}`}`;
+        if (ds.allEntries[key]) {
+          return { ...ds };
+        } else {
+          all = {
+            ...ds.allEntries,
+            [key]: entry,
+          };
+        }
+
+        return { ...ds, allEntries: all };
+      });
+    },
+    [setDataStatus]
+  );
+
+  const getEntry = React.useCallback(
+    async (uid: string, content_type_uid: string, locale: string): Promise<IReference> => {
+      const response = await appSdk?.location?.SidebarWidget?.stack
+        .ContentType(content_type_uid)
+        .Entry(uid)
+        .language(locale)
+        .fetch();
+      const languagesResponse = await appSdk?.location?.SidebarWidget?.stack
+        .ContentType(content_type_uid)
+        .Entry(uid)
+        .getLanguages();
+      // console.log("Getting entry", uid, content_type_uid, locale, response.entry);
+      return {
+        uniqueKey: `${response.entry.uid}_${locale}`,
+        uid: response.entry.uid,
+        isAsset: false,
+        content_type_uid: content_type_uid,
+        entry: response.entry,
+        references: [],
+        locale: locale,
+        locales: languagesResponse.locales,
+      };
+    },
+
+    //TODO: We might need a dependency here... let's check appSdk
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    []
+  );
+
+  const getEntryPromises = React.useCallback(
+    (entry: any, locale: string): Promise<any>[] => {
+      const promises: Promise<any>[] = [];
+      let refs: string[] = [];
+      const sJson = JSON.stringify(entry, null, 2);
+
+      const refMatches = sJson.matchAll(REF_REGEXP);
+      for (const rMatch of refMatches) {
+        const refUid = rMatch[1] as string;
+        const refCtUid = rMatch[2] as string;
+        if (!refs.includes(refUid)) {
+          promises.push(getEntry(refUid, refCtUid, locale));
+          refs.push(refUid);
+        }
+      }
+      return promises;
+    },
+    [getEntry]
+  );
+
+  const getAssetPromises = React.useCallback(
+    (entry: any): Promise<any>[] => {
+      const promises: Promise<any>[] = [];
+      let refs: string[] = [];
+      const sJson = JSON.stringify(entry, null, 2);
+      const assetMatches = sJson.matchAll(ASSET_REGEXP);
+      for (const aMatch of assetMatches) {
+        const refUid = aMatch[1] as string;
+        if (!refs.includes(refUid)) {
+          // promises.push(sdk.getAsset(refUid, ""));
+          promises.push(getAsset(refUid));
+          refs.push(refUid);
+        }
+      }
+
+      return promises;
+    },
+    [getAsset]
+  );
+
+  const processItem = React.useCallback((item: IReference): void => {
+    let idx = -1;
+    if (item.isAsset) {
+      idx = processedItems.current.findIndex((i) => i.id === item.uid);
+    } else {
+      idx = processedItems.current.findIndex((i) => i.id === item.uid && i.locale === item.locale);
+    }
+
+    if (idx > -1) {
+      processedItems.current[idx].completed = true;
+    }
+  }, []);
+
+  /**
+   * Get all references (recursively) for an entry.
+   * Once the recursion for an entry is completed, the function calls: processItem and updates the trackerObserver,
+   * so it can determine whether all items have been processed.
+   *
+   * By updating the trackerObserver, the useEffect with its dependency will be triggered again,
+   * and the app will check whether the recursion is completed, so the data can be displayed.
+   *
+   */
+  const loadReferences = React.useCallback(
+    (reference: IReference): void => {
+      let promises = [...getEntryPromises(reference.entry, reference.locale), ...getAssetPromises(reference.entry)];
+      Promise.all(promises)
+        .then((results) => {
+          for (const ref of results) {
+            if (reference.references && !reference.references.includes(ref.uid)) {
+              reference.references.push(ref.uid);
+              addEntry(ref);
+              if (processedItems.current.some((t: any) => t.id === ref.uid && t.locale === ref.locale)) {
+                continue;
+              }
+
+              if (ref.isAsset) {
+                // console.log("Asset processed", ref.uid, ref.locale);
+                pushItem(ref, true);
+                continue;
+              }
+              // console.log("Entry processed", ref.uid, ref.locale);
+              pushItem(ref);
+              loadReferences(ref);
+            }
+          }
+
+          addEntry(reference);
+
+          setProcessingTracker((n) => {
+            processItem(reference);
+            return n + 1;
+          });
+          setProcessingTracker((n) => n + 1);
+        })
+        .catch((error) => {
+          console.log("Loading References Error", error);
+        });
+    },
+    [addEntry, getAssetPromises, getEntryPromises, processItem, pushItem]
+  );
+
+  const reload = React.useCallback(() => {
+    setOperationInProgress(OPERATIONS.LOADING_REFERENCES);
+    setLoading(true);
+    clearStatus(true);
+    locales
+      .filter((l) => l.checked)
+      .forEach((locale: ILocaleConfig) => {
+        appSdk?.location?.SidebarWidget?.stack
+          .ContentType(contentTypeUid)
+          .Entry(entry.uid)
+          .language(locale.code)
+          .fetch()
+          .then((entryResponse: any) => {
+            appSdk.location?.SidebarWidget?.stack
+              .ContentType(contentTypeUid)
+              .Entry(entry.uid)
+              .getLanguages()
+              .then((response: any) => {
+                const localeTopRef: IReference = {
+                  uniqueKey: `${entry.uid}_${locale.code}`,
+                  uid: entry.uid,
+                  isAsset: false,
+                  content_type_uid: contentTypeUid,
+                  entry: entryResponse.entry,
+                  references: [],
+                  locales: response.locales,
+                  locale: locale.code,
+                };
+                pushItem(localeTopRef);
+                loadReferences(localeTopRef);
+              })
+              .catch((error: any) => {
+                showError("Error Getting Languages");
+                console.log("Error Getting Languages", error);
+              });
+          })
+          .catch((error: any) => {
+            showError("Error Getting Entry");
+            console.log("Error Getting Entry", error);
+          });
+      });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [locales, entry, contentTypeUid]);
+
+  React.useEffect(() => {
+    if (loading && processedItems.current.length > 0 && processedItems.current.every((c) => c.completed)) {
+      showData();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [processingTracker]);
+
+  React.useEffect(() => {
+    if (entry && locales && locales.some((l) => l.checked)) {
+      if (reloadOnChangeLocales) {
+        reload();
+      }
+    } else {
+      setProcessingTracker((to) => to + 1);
+      clearDataStatus();
+      setLoading(false);
+      setOperationInProgress(OPERATIONS.NONE);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [locales, entry, contentTypeUid, reloadOnChangeLocales]);
+
+  React.useEffect(() => {
+    const handleAppClose = (event: any) => {
+      event.preventDefault();
+      saveUserSelections();
+      return false;
+    };
+    window.addEventListener("unload", handleAppClose);
+
+    return () => {
+      window.removeEventListener("unload", handleAppClose);
+    };
+  }, [saveUserSelections]);
+
+  return (
+    <>
+      <Accordion title={"References"} renderExpanded className="bp-accordion">
+        <div style={{ paddingLeft: 5 }}>
+          <InfiniteScrollTable
+            canRefresh={!reloadOnChangeLocales}
+            loading={loading}
+            initialSelectedRowIds={dataStatus.initiallySelected}
+            disabled={operationInProgress !== OPERATIONS.NONE}
+            canSearch={false}
+            totalCounts={dataStatus.data.length}
+            data={dataStatus.data}
+            isLoading={operationInProgress !== OPERATIONS.NONE}
+            fetchTableData={() => {
+              reload();
+            }}
+            loadMoreItems={() => {}}
+            itemStatusMap={dataStatus.statuses}
+            columns={getColumns()}
+            uniqueKey={"uniqueKey"}
+            hiddenColumns={["uniqueKey"]}
+            isRowSelect
+            getSelectedRow={getSelectedRow}
+            getViewByValue={(selectedViewBy: any) => {
+              updateViewBy(selectedViewBy);
+            }}
+            emptyHeading={"No references"}
+            emptyDescription={
+              locales.some((l) => l.checked) ? undefined : "Please, select at least one locale to load the references."
+            }
+            viewSelector={true}
+            columnSelector={false}
+            tableHeight={400}
+          />
+        </div>
+      </Accordion>
+      <>
+        <br />
+        <div className="flex">
+          <Button
+            disabled={
+              !(dataStatus && dataStatus.selectedReferences && Object.keys(dataStatus.selectedReferences).length > 0) ||
+              (environments?.filter((e: IEnvironmentConfig) => e.checked) || []).length === 0 ||
+              (locales?.filter((l: ILocaleConfig) => l.checked) || []).length === 0 ||
+              (operationInProgress !== OPERATIONS.NONE && operationInProgress !== OPERATIONS.PUBLISHING)
+            }
+            onClick={() => {
+              if (dataStatus && dataStatus.selectedReferences && locales) {
+                publishEntries(Object.keys(dataStatus.selectedReferences));
+              }
+            }}
+            isLoading={operationInProgress === OPERATIONS.PUBLISHING}
+            icon={"PublishWhite"}
+            buttonType="primary"
+          >
+            Publish
+          </Button>
+        </div>
+      </>
+      <LogDetails />
+    </>
+  );
+}
+
+export default ReferencesTable;
