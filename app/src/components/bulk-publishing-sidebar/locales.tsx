@@ -34,7 +34,6 @@ function Locales() {
             checked: selections?.locales?.some((l: any) => l.code === locale.code && l.checked) || false,
           };
         });
-        console.log("configuredLocales", configuredLocales);
         setLocales(configuredLocales);
       })
       .catch((error) => {});

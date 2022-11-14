@@ -4,7 +4,7 @@ import useAuth from "./useAuth";
 import { useEffect } from "react";
 import useRefresh from "./useRefreshToken";
 
-const useContenstackAxios = () => {
+const useContentstackAxios = () => {
   const [
     {
       bulkPublishingConfig: { apiKey },
@@ -19,9 +19,11 @@ const useContenstackAxios = () => {
       (config) => {
         if (config && config.headers) {
           if (!config.headers["authorization"]) {
+            // console.log("Request Interceptor, adding auth", `Bearer ${auth?.access_token}`);
             config.headers["authorization"] = `Bearer ${auth?.access_token}`;
           }
           if (!config.headers["api_key"]) {
+            // console.log("Request Interceptor, adding api_key", apiKey);
             config.headers["api_key"] = apiKey;
           }
         }
@@ -31,7 +33,10 @@ const useContenstackAxios = () => {
     );
 
     const responseIntercept = axios.interceptors.response.use(
-      (response) => response,
+      (response) => {
+        // console.log("Response Interceptor", response);
+        return response;
+      },
       async (error) => {
         const prevRequest = error?.config;
         if (error?.response?.status === 403 && !prevRequest?.sent) {
@@ -41,6 +46,7 @@ const useContenstackAxios = () => {
           prevRequest.headers["authorization"] = `Bearer ${data.access_token}`;
           return axios(prevRequest);
         }
+        console.log("Interceptor Error", error.response);
         return Promise.reject(error);
       }
     );
@@ -54,4 +60,4 @@ const useContenstackAxios = () => {
   return axios;
 };
 
-export default useContenstackAxios;
+export default useContentstackAxios;

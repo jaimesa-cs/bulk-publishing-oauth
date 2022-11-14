@@ -29,8 +29,10 @@ export const useEntry = ({ onChange, onSave }: { onChange?: OnChange; onSave?: O
     (async () => {
       if (!isEmpty(entryData) || isNull(location)) return;
       setLoading(true);
+      const data = await location.entry.getData();
+      console.log("useEntry", data);
       const entry: { [key: string]: any } = {
-        ...(await location.entry.getData()),
+        ...data,
         content_type: { title: location.entry.content_type.title, uid: location.entry.content_type.uid },
       };
 

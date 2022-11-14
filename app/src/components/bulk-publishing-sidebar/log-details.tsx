@@ -13,7 +13,6 @@ export default function LogDetails() {
         <Accordion
           title={`Details ${log.some((l: ILog) => l.type === "error") ? "(Errors)" : "(Success)"}`}
           accordionDataCount={log.length}
-          renderExpanded
           actions={[
             {
               _component: (
@@ -37,8 +36,8 @@ export default function LogDetails() {
           <ol>
             {log.map((l: any, index: number) => {
               return (
-                <li>
-                  <div key={`log-icon-${index}`} className="icon-spacing" style={{ width: "100%" }}>
+                <li key={`log-icon-${index}`}>
+                  <div className="icon-spacing" style={{ width: "100%" }}>
                     <Icon icon={l.type === "info" ? "Success" : "Error"} />
 
                     {` ${l.message}`}

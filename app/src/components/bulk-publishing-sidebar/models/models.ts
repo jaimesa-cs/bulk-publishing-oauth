@@ -25,7 +25,9 @@ export interface IDataStatus {
   selectedReferences: any;
 }
 
-export interface IEnvironmentConfig extends ICheckable {}
+export interface IEnvironmentConfig extends ICheckable {
+  uid: string;
+}
 export interface ILocaleConfig extends ICheckable {
   code: string;
   isMaster: boolean;

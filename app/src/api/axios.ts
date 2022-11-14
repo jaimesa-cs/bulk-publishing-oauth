@@ -15,4 +15,5 @@ export const axiosPrivate = axios.create({
 export const contentstackAxios = axios.create({
   baseURL: CONTENTSTACK_HOST,
   headers: { "Content-Type": "application/json" },
+  withCredentials: true,
 });

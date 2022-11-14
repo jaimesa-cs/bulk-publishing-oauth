@@ -5,12 +5,18 @@ import {
   IEnvironmentConfig,
   ILocaleConfig,
   IProcessedItem,
-  IPublishStatus,
   IReference,
   OPERATIONS,
   REF_REGEXP,
 } from "./models/models";
-import { Accordion, Button, InfiniteScrollTable, InstructionText, Tooltip } from "@contentstack/venus-components";
+import {
+  Accordion,
+  Button,
+  Checkbox,
+  InfiniteScrollTable,
+  InstructionText,
+  Tooltip,
+} from "@contentstack/venus-components";
 import {
   addLogErrorAtom,
   addLogInfoAtom,
@@ -35,6 +41,7 @@ import React from "react";
 import { useAppSdk } from "../../hooks/useAppSdk";
 import { useAtom } from "jotai";
 import { useEntry } from "../../hooks/useEntry";
+import { useOauthCsApi } from "./cs-oauth-api";
 import useUserSelections from "../../hooks/useUserSelections";
 
 export const SAVE_MESSAGE: string = "You need to save the entry, and reload the extension to update the references.";
@@ -74,11 +81,13 @@ function ReferencesTable() {
     },
   });
   const { saveUserSelections } = useUserSelections();
+  const { publish, publishAsRelease } = useOauthCsApi();
 
   const [viewBy, updateViewBy] = React.useState("Comfortable");
+  const [deployReleases, setDeployReleases] = React.useState(false);
   const processedItems = React.useRef<IProcessedItem[]>([]);
 
-  const getSelectedRow = (singleSelectedRowIds: any, selectedData: any) => {
+  const getSelectedRow = (singleSelectedRowIds: any) => {
     let selectedObj: any = {};
     singleSelectedRowIds.forEach((refUid: any) => {
       selectedObj[refUid] = true;
@@ -172,95 +181,48 @@ function ReferencesTable() {
     ];
   }, [viewBy]);
 
-  const publishEntry = React.useCallback(
-    async (uid: string): Promise<IPublishStatus> => {
-      const entry = dataStatus.allEntries[uid];
-      let response: any;
-      let ll = locales?.filter((l) => l.checked).map((l) => l.code);
+  const publishEntries = React.useCallback(() => {
+    const selectedKeys = Object.keys(dataStatus.selectedReferences);
 
-      try {
-        if (entry.isAsset) {
-          response = await appSdk?.location?.SidebarWidget?.stack.Asset(entry.uid).publish({
-            asset: {
-              locales: ll,
-              environments: environments
-                ?.filter((e: IEnvironmentConfig) => e.checked)
-                .map((c: IEnvironmentConfig) => c.name),
-            },
-          });
-        } else {
-          ll = [entry.locale];
-          response = await appSdk?.location?.SidebarWidget?.stack
-            .ContentType(entry.content_type_uid)
-            .Entry(entry.uid)
-            .publish({
-              entry: {
-                locales: ll,
-                environments: environments
-                  ?.filter((e: IEnvironmentConfig) => e.checked)
-                  .map((c: IEnvironmentConfig) => c.name),
-              },
-            });
-        }
-        // showSuccess(`Published ${entry.isAsset ? "asset" : "entry"} ${entry.uid} in ${ll?.join(", ")}`);
-        addLogInfo(`Published ${entry.isAsset ? "asset" : "entry"} ${entry.uid} in ${ll?.join(", ")}`);
-        return {
-          uid: entry.uid,
-          content_type_uid: entry.isAsset ? "_asset" : entry.content_type_uid,
-          status: {
-            success: true,
-            payload: response,
-          },
-        };
-      } catch (e: any) {
-        console.log("Error:", entry.uid, e);
-        // showError(`Error publishing ${entry.isAsset ? "asset" : "entry"} ${entry.uid} in ${ll?.join(", ")}`);
-        addLogError(`Error publishing ${entry.isAsset ? "asset" : "entry"} ${entry.uid} in ${ll?.join(", ")}`);
-        return {
-          uid: entry.uid,
-          content_type_uid: entry.isAsset ? "_asset" : entry.content_type_uid,
-          status: {
-            success: false,
-            payload: e,
-          },
-        };
-      }
-    },
-    //Jaime: we might need to use extensionConfig
-    [dataStatus.allEntries, locales, environments, addLogInfo, appSdk?.location?.SidebarWidget?.stack, addLogError]
-  );
+    const references: IReference[] = Object.values(dataStatus.allEntries).filter(
+      (r) => selectedKeys.indexOf(r.uniqueKey) > -1
+    );
 
-  const publishEntries = React.useCallback(
-    (keys: string[]) => {
-      setOperationInProgress(OPERATIONS.PUBLISHING);
+    publish(
+      references,
+      locales.filter((l) => l.checked),
+      environments.filter((e) => e.checked)
+    );
+  }, [dataStatus.allEntries, dataStatus.selectedReferences, publish, locales, environments]);
 
-      const promises: any = [];
-      setLog([]);
-      keys.forEach((key: string) => {
-        promises.push(publishEntry(key));
-      });
+  const publishEntriesAsRelease = React.useCallback(() => {
+    const selectedKeys = Object.keys(dataStatus.selectedReferences);
+    const references: IReference[] = Object.values(dataStatus.allEntries).filter(
+      (r) => selectedKeys.indexOf(r.uniqueKey) > -1
+    );
 
-      Promise.all(promises)
-        .then((results: IPublishStatus[]) => {
-          setOperationInProgress(OPERATIONS.NONE);
-          // console.log("Publish results", results);
-          showSuccessWithDetails(
-            "Publishing Completed!",
-            () => {
-              setShowLog(true);
-            },
-            `${results.length} entries published to ${environments
-              .filter((e: IEnvironmentConfig) => e.checked)
-              .map((c: IEnvironmentConfig) => c.name)
-              .join(", ")}`
-          );
-        })
-        .catch((error) => {
-          console.log("Publishing Error:", error);
-        });
-    },
-    [environments, publishEntry, setLog, setOperationInProgress, setShowLog]
-  );
+    if (entry) {
+      publishAsRelease(
+        entry,
+        references,
+        locales.filter((l) => l.checked),
+        environments.filter((e) => e.checked),
+        deployReleases
+      );
+    } else {
+      showError("Unable to deploy as release. Please save the entry first.");
+      setOperationInProgress(OPERATIONS.NONE);
+    }
+  }, [
+    dataStatus.selectedReferences,
+    dataStatus.allEntries,
+    entry,
+    publishAsRelease,
+    locales,
+    environments,
+    deployReleases,
+    setOperationInProgress,
+  ]);
 
   const clearStatus = React.useCallback(
     (clearTracker: boolean = false) => {
@@ -573,9 +535,10 @@ function ReferencesTable() {
           />
         </div>
       </Accordion>
+
       <>
         <br />
-        <div className="flex">
+        <div>
           <Button
             disabled={
               !(dataStatus && dataStatus.selectedReferences && Object.keys(dataStatus.selectedReferences).length > 0) ||
@@ -585,7 +548,7 @@ function ReferencesTable() {
             }
             onClick={() => {
               if (dataStatus && dataStatus.selectedReferences && locales) {
-                publishEntries(Object.keys(dataStatus.selectedReferences));
+                publishEntries();
               }
             }}
             isLoading={operationInProgress === OPERATIONS.PUBLISHING}
@@ -594,6 +557,36 @@ function ReferencesTable() {
           >
             Publish
           </Button>
+          &nbsp;
+          <Button
+            disabled={
+              !(dataStatus && dataStatus.selectedReferences && Object.keys(dataStatus.selectedReferences).length > 0) ||
+              (environments?.filter((e: IEnvironmentConfig) => e.checked) || []).length === 0 ||
+              (locales?.filter((l: ILocaleConfig) => l.checked) || []).length === 0 ||
+              (operationInProgress !== OPERATIONS.NONE && operationInProgress !== OPERATIONS.PUBLISHING)
+            }
+            onClick={() => {
+              if (dataStatus && dataStatus.selectedReferences && locales) {
+                publishEntriesAsRelease();
+              }
+            }}
+            isLoading={operationInProgress === OPERATIONS.PUBLISHING}
+            icon={"DeployOutline"}
+            buttonType="primary"
+          >
+            Release
+          </Button>
+          <hr />
+          <Checkbox
+            onClick={() => {
+              setDeployReleases((dr) => !dr);
+            }}
+            label={"Deploy Release"}
+            checked={deployReleases}
+            disabled={operationInProgress !== OPERATIONS.NONE}
+            isButton={false}
+            isLabelFullWidth={false}
+          />
         </div>
       </>
       <LogDetails />
