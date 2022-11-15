@@ -72,5 +72,9 @@
     "prettier": "^2.7.1",
     "react-test-renderer": "^16.14.0",
     "ts-node": "^10.8.2"
+  },
+  "resolutions": {
+    "react-scripts/**/nth-check": "^2.0.1 ",
+    "@contentstack/venus-components/**/d3-color": "^3.1.0"
   }
 }
