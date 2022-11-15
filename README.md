@@ -2,7 +2,7 @@
 
 This application is based on the following boilerplate example:
 
-See the [Boilerplate App]("https://github.com/contentstack/marketplace-app-boilerplate") for further details.
+See the [Boilerplate App](https://github.com/contentstack/marketplace-app-boilerplate) for further details.
 
 ## Application(s) Setup
 
@@ -10,7 +10,7 @@ This application consists of two parts, a React application available in the `ap
 
 In both cases these are standard create-react-app and express-based api implementation and you should be familiar with both in order to be able to use this as a reference and implement further functionality.
 
-Here you can find more information about [React]("https://reactjs.org/") and [Express]("https://expressjs.com/").
+Here you can find more information about [React](https://reactjs.org/) and [Express](https://expressjs.com/).
 
 Within both folders you will need to install the dependencies using your preferred package manager. In this case we will use `yarn`.
 Simply run `yarn` within each folder.
