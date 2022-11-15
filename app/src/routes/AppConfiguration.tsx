@@ -78,10 +78,10 @@ const AppConfigurationExtension = () => {
             bulkPublishingConfig: installationDataFromSDK.configuration.bulkPublishingConfig,
           };
         });
-        console.log(
-          "🚀 ~ file: AppConfiguration.tsx ~ line 79 ~ setState ~ installationDataFromSDK.configuration.bulkPublishingConfig",
-          installationDataFromSDK.configuration.bulkPublishingConfig
-        );
+        // console.log(
+        //   "🚀 ~ file: AppConfiguration.tsx ~ line 79 ~ setState ~ installationDataFromSDK.configuration.bulkPublishingConfig",
+        //   installationDataFromSDK.configuration.bulkPublishingConfig
+        // );
       });
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps

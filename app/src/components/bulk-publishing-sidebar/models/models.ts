@@ -6,12 +6,6 @@ export const REF_REGEXP: RegExp = /"uid":[\s]+"(.*)",[\s]+"_content_type_uid":[\
 
 export interface IBulkPublishingConfig extends KeyValueObj {}
 
-export interface IBulkPublishingState {
-  config?: IBulkPublishingConfig;
-  trackerObserver: number;
-  dataStatus: IDataStatus;
-}
-
 export interface ICheckable {
   name: string;
   checked: boolean;

@@ -50,7 +50,6 @@ export const dataStatusAtom = atom<IDataStatus>({
   initiallySelected: {},
   selectedReferences: {},
 });
-export const processingTrackerAtom = atom<number>(0);
 
 export const configAtom = atom<IBulkPublishingConfig | undefined>(undefined);
 export const logAtom = atom<ILog[]>([]);

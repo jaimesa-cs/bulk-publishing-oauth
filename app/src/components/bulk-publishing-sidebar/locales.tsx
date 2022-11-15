@@ -25,6 +25,7 @@ function Locales() {
   const { selections } = useUserSelections();
 
   React.useEffect(() => {
+    // console.log("useEffect Locales");
     setReloadOnChangeLocales(selections?.reloadOnChangeLocales || false);
     getLocales()
       .then((response) => {

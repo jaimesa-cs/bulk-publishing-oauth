@@ -46,7 +46,6 @@ const useContentstackAxios = () => {
           prevRequest.headers["authorization"] = `Bearer ${data.access_token}`;
           return axios(prevRequest);
         }
-        console.log("Interceptor Error", error.response);
         return Promise.reject(error);
       }
     );

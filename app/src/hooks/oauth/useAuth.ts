@@ -7,18 +7,21 @@ import useLocalStorage from "../useLocalStorage";
 export const AUTH_KEY = "csat";
 
 const useAuth = () => {
-  const [auth, setAuth] = useLocalStorage<KeyValueObj>(AUTH_KEY, getInitialTokenValue());
+  const [auth, setAuth] = useLocalStorage<KeyValueObj | undefined>(AUTH_KEY, getInitialTokenValue());
 
   const [isValid, setIsValid] = React.useState(isValidToken(auth));
 
-  React.useEffect(() => {
-    setIsValid(isValidToken(auth));
-  }, [auth]);
+  // React.useEffect(() => {
+  //   if (auth) {
+  //     console.log("useAuth, auth changed", auth);
+  //     setIsValid(isValidToken(auth));
+  //   }
+  // }, []);
 
   return {
     auth,
     setAuth,
-    isValid,
+    isValid: isValidToken(auth),
     canRefresh: !isValid && auth?.refresh_token,
   };
 };

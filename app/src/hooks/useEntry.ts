@@ -26,35 +26,24 @@ export const useEntry = ({ onChange, onSave }: { onChange?: OnChange; onSave?: O
   }
 
   useEffect(() => {
-    (async () => {
-      if (!isEmpty(entryData) || isNull(location)) return;
-      setLoading(true);
-      const data = await location.entry.getData();
-      console.log("useEntry", data);
-      const entry: { [key: string]: any } = {
-        ...data,
-        content_type: { title: location.entry.content_type.title, uid: location.entry.content_type.uid },
-      };
+    // console.log("useEffect useEntry");
+    if (!isEmpty(entryData) || isNull(location) || isNull(location)) return;
 
-      location.entry.onChange(onChange);
-      location.entry.onSave(onSave);
+    setLoading(true);
+    const data = location.entry.getData();
+    const entry: { [key: string]: any } = {
+      ...data,
+      content_type: { title: location.entry.content_type.title, uid: location.entry.content_type.uid },
+    };
 
-      // entry.onChange((e: any, b: any) => {
-      //   setShowWarning(true);
-      //   setWarningMessage(SAVE_MESSAGE);
-      //   setCanRefresh(false);
-      // });
-      // location?.SidebarWidget?.entry.onSave((e: any, b: any) => {
-      //   setShowWarning(true);
-      //   setWarningMessage(SAVED_MESSAGE);
-      //   setCanRefresh(true);
-      // });
+    location.entry.onChange(onChange);
+    location.entry.onSave(onSave);
+    setContentTypeUid(location.entry.content_type.uid);
+    setEntry(entry);
 
-      setContentTypeUid(location.entry.content_type.uid);
-      setEntry(entry);
-      setLoading(false);
-    })();
-  }, [entryData, location, setLoading, setEntry, setContentTypeUid]);
+    setLoading(false);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [entryData, location]);
 
   const setEntryData = useCallback(
     async (entry: any) => {

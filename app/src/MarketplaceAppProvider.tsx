@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
 
 import { AppFailed } from "./components/AppFailed";
+import { Button } from "@contentstack/venus-components";
 import ContentstackAppSDK from "@contentstack/app-sdk";
 import Extension from "@contentstack/app-sdk/dist/src/extension";
 import { KeyValueObj } from "./types";
@@ -53,7 +54,13 @@ export const MarketplaceAppWrapper: React.FC<ProviderProps> = ({ children, ignor
     return <>{children}</>;
   }
   if (!failed && (isNull(appSdk) || isNull(appConfig))) {
-    return <div>Loading...</div>;
+    return (
+      <div>
+        <Button buttonType="secondary" isLoading={true}>
+          ...
+        </Button>
+      </div>
+    );
   }
 
   if (failed) {

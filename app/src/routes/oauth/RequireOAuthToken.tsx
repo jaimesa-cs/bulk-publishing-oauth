@@ -9,10 +9,12 @@ const RequireOAuthToken = () => {
   const { isValid } = useAuth();
 
   React.useEffect(() => {
-    //Try to rfresh token if possible
-    asyncRefresh();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+    //Try to refresh token if possible
+    if (!isValid) {
+      console.log("Token is not valid, trying to refresh");
+      asyncRefresh();
+    }
+  }, [asyncRefresh, isValid]);
 
   return isValid ? <Outlet /> : <AuthorizeButton />;
 };

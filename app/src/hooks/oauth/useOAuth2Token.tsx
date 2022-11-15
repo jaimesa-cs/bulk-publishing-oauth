@@ -85,7 +85,7 @@ const OAuthCallbackHandler: React.FunctionComponent<{ children: React.ReactNode 
       },
     })
       .then((res) => {
-        console.log("🚀 ~ file: useOAuth2Token.tsx ~ line 264 ~ .then ~ res", res.data);
+        // console.log("🚀 ~ file: useOAuth2Token.tsx ~ line 264 ~ .then ~ res", res.data);
         setAuth(res.data);
         window.close();
       })

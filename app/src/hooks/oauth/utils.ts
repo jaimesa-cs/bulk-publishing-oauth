@@ -1,12 +1,13 @@
 import { AUTH_KEY } from "./useAuth";
 import { KeyValueObj } from "../../types";
+import secureLocalStorage from "react-secure-storage";
 
 export const isValidToken = (auth: KeyValueObj | undefined): boolean => {
   if (auth === undefined) {
     return false;
   }
   return (
-    localStorage.getItem(AUTH_KEY) &&
+    secureLocalStorage.getItem(AUTH_KEY) &&
     auth &&
     auth.access_token &&
     auth.refresh_token &&

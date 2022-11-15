@@ -18,38 +18,32 @@ import {
   Tooltip,
 } from "@contentstack/venus-components";
 import {
-  addLogErrorAtom,
-  addLogInfoAtom,
   canRefreshAtom,
   clearDataStatusAtom,
   dataStatusAtom,
   environmentsAtom,
   loadingAtom,
   localesAtom,
-  logAtom,
   operationInProgressAtom,
   reloadOnChangeLocalesAtom,
   setDataStatusAtom,
-  showLogAtom,
   showWarningMessageAtom,
   warningMessageAtom,
 } from "./store";
-import { showError, showSuccessWithDetails } from "../../utils/notifications";
 
 import LogDetails from "./log-details";
 import React from "react";
+import { showError } from "../../utils/notifications";
 import { useAppSdk } from "../../hooks/useAppSdk";
 import { useAtom } from "jotai";
 import { useEntry } from "../../hooks/useEntry";
 import { useOauthCsApi } from "./cs-oauth-api";
-import useUserSelections from "../../hooks/useUserSelections";
 
 export const SAVE_MESSAGE: string = "You need to save the entry, and reload the extension to update the references.";
 export const SAVED_MESSAGE: string = "Entry saved, you need to reload the extension to update the references.";
 
 function ReferencesTable() {
   const [dataStatus, setDataStatus] = useAtom(dataStatusAtom);
-  const [, setLog] = useAtom(logAtom);
   const [environments] = useAtom(environmentsAtom);
   const [locales] = useAtom(localesAtom);
 
@@ -60,9 +54,6 @@ function ReferencesTable() {
   const [reloadOnChangeLocales] = useAtom(reloadOnChangeLocalesAtom);
 
   const [loading, setLoading] = useAtom(loadingAtom);
-  const [, setShowLog] = useAtom(showLogAtom);
-  const [, addLogInfo] = useAtom(addLogInfoAtom);
-  const [, addLogError] = useAtom(addLogErrorAtom);
   const [, setShowWarning] = useAtom(showWarningMessageAtom);
   const [, setWarningMessage] = useAtom(warningMessageAtom);
   const [, setCanRefresh] = useAtom(canRefreshAtom);
@@ -80,7 +71,7 @@ function ReferencesTable() {
       setCanRefresh(true);
     },
   });
-  const { saveUserSelections } = useUserSelections();
+
   const { publish, publishAsRelease } = useOauthCsApi();
 
   const [viewBy, updateViewBy] = React.useState("Comfortable");
@@ -266,7 +257,7 @@ function ReferencesTable() {
         references: [],
       };
     },
-    //TODO: add dependencies
+
     // eslint-disable-next-line react-hooks/exhaustive-deps
     []
   );
@@ -288,7 +279,8 @@ function ReferencesTable() {
         return { ...ds, allEntries: all };
       });
     },
-    [setDataStatus]
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    []
   );
 
   const getEntry = React.useCallback(
@@ -314,8 +306,6 @@ function ReferencesTable() {
         locales: languagesResponse.locales,
       };
     },
-
-    //TODO: We might need a dependency here... let's check appSdk
     // eslint-disable-next-line react-hooks/exhaustive-deps
     []
   );
@@ -337,7 +327,8 @@ function ReferencesTable() {
       }
       return promises;
     },
-    [getEntry]
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    []
   );
 
   const getAssetPromises = React.useCallback(
@@ -357,7 +348,8 @@ function ReferencesTable() {
 
       return promises;
     },
-    [getAsset]
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    []
   );
 
   const processItem = React.useCallback((item: IReference): void => {
@@ -418,7 +410,8 @@ function ReferencesTable() {
           console.log("Loading References Error", error);
         });
     },
-    [addEntry, getAssetPromises, getEntryPromises, processItem, pushItem]
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    []
   );
 
   const reload = React.useCallback(() => {
@@ -466,7 +459,12 @@ function ReferencesTable() {
   }, [locales, entry, contentTypeUid]);
 
   React.useEffect(() => {
-    if (loading && processedItems.current.length > 0 && processedItems.current.every((c) => c.completed)) {
+    if (
+      processingTracker > 0 &&
+      loading &&
+      processedItems.current.length > 0 &&
+      processedItems.current.every((c) => c.completed)
+    ) {
       showData();
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -486,18 +484,18 @@ function ReferencesTable() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [locales, entry, contentTypeUid, reloadOnChangeLocales]);
 
-  React.useEffect(() => {
-    const handleAppClose = (event: any) => {
-      event.preventDefault();
-      saveUserSelections();
-      return false;
-    };
-    window.addEventListener("unload", handleAppClose);
+  // React.useEffect(() => {
+  //   const handleAppClose = (event: any) => {
+  //     event.preventDefault();
+  //     saveUserSelections();
+  //   };
 
-    return () => {
-      window.removeEventListener("unload", handleAppClose);
-    };
-  }, [saveUserSelections]);
+  //   window.addEventListener("unload", handleAppClose);
+
+  //   return () => {
+  //     window.removeEventListener("unload", handleAppClose);
+  //   };
+  // }, [saveUserSelections]);
 
   return (
     <>
@@ -510,6 +508,7 @@ function ReferencesTable() {
             disabled={operationInProgress !== OPERATIONS.NONE}
             canSearch={false}
             totalCounts={dataStatus.data.length}
+            // data={operationInProgress === OPERATIONS.NONE ? dataStatus.data : []}
             data={dataStatus.data}
             isLoading={operationInProgress !== OPERATIONS.NONE}
             fetchTableData={() => {

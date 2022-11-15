@@ -1,6 +1,8 @@
 import { Dispatch, SetStateAction, useCallback, useEffect, useState } from "react";
 import { useEventCallback, useEventListener } from "usehooks-ts";
 
+import secureLocalStorage from "react-secure-storage";
+
 declare global {
   interface WindowEventMap {
     "local-storage": CustomEvent;
@@ -9,19 +11,19 @@ declare global {
 
 export type SetValue<T> = Dispatch<SetStateAction<T>>;
 
-function useLocalStorage<T>(key: string, initialValue?: T): [T | undefined, SetValue<T | undefined>] {
+function useLocalStorage<T>(key: string, initialValue?: T): [T, SetValue<T>] {
   // Get from local storage then
   // parse stored json or return initialValue
   const readValue = useCallback((): T | undefined => {
     // Prevent build error "window is undefined" but keeps working
     if (typeof window === "undefined") {
-      return initialValue || undefined;
+      return initialValue as T;
     }
 
     try {
-      const item = window.localStorage.getItem(key);
+      const item = secureLocalStorage.getItem(key) as T;
       // console.log("🚀 ~ file: useLocalStorage.ts ~ line 23 ~ readValue ~ item", key, item);
-      return item ? (parseJSON(item) as T) : initialValue;
+      return item ? item : initialValue;
     } catch (error) {
       console.warn(`Error reading localStorage key “${key}”:`, error);
       return initialValue;
@@ -34,7 +36,7 @@ function useLocalStorage<T>(key: string, initialValue?: T): [T | undefined, SetV
 
   // Return a wrapped version of useState's setter function that ...
   // ... persists the new value to localStorage.
-  const setValue: SetValue<T | undefined> = useEventCallback((value) => {
+  const setValue: SetValue<T> = useEventCallback((value) => {
     // Prevent build error "window is undefined" but keeps working
     if (typeof window === "undefined") {
       console.warn(`Tried setting localStorage key “${key}” even though environment is not a client`);
@@ -42,13 +44,13 @@ function useLocalStorage<T>(key: string, initialValue?: T): [T | undefined, SetV
 
     try {
       // Allow value to be a function so we have the same API as useState
-      const newValue = value instanceof Function ? value(storedValue) : value;
+      const newValue = value instanceof Function ? value(storedValue as T) : value;
 
       if (newValue === undefined) {
-        window.localStorage.removeItem(key);
+        secureLocalStorage.removeItem(key);
       } else {
         // Save to local storage
-        window.localStorage.setItem(key, JSON.stringify(newValue));
+        secureLocalStorage.setItem(key, newValue as object);
       }
 
       // Save state
@@ -83,17 +85,7 @@ function useLocalStorage<T>(key: string, initialValue?: T): [T | undefined, SetV
   // See: useLocalStorage()
   useEventListener("local-storage", handleStorageChange);
 
-  return [storedValue, setValue];
+  return [storedValue as T, setValue];
 }
 
 export default useLocalStorage;
-
-// A wrapper for "JSON.parse()"" to support "undefined" value
-function parseJSON<T>(value: string | null): T | undefined {
-  try {
-    return value === "undefined" ? undefined : JSON.parse(value ?? "");
-  } catch {
-    console.log("parsing error on", { value });
-    return undefined;
-  }
-}

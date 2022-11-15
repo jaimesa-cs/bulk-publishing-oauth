@@ -26,6 +26,7 @@ function Environments() {
   const { selections } = useUserSelections();
 
   React.useEffect(() => {
+    // console.log("useEffect Environments");
     getEnvironments()
       .then((response) => {
         const configuredEnvironments = response.data.environments.map((env: IEnvironmentConfig) => {

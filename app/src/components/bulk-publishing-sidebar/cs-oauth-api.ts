@@ -218,7 +218,6 @@ const getReleases = (
       const titlePortion = entry.title.substring(0, charsLeft);
 
       let releaseName = `${titlePortion} ${mandatoryText}`;
-      console.log("releaseName", releaseName);
       while (e.length > 0) {
         // console.log("==================================");
         const currentEntries = e.splice(0, MAX_ITEMS_PER_RELEASE);

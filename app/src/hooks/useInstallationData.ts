@@ -1,7 +1,8 @@
-import { useCallback, useEffect, useState } from "react";
-import { useAppLocation } from "./useAppLocation";
-import { isEmpty } from "lodash";
 import { atom, useAtom } from "jotai";
+import { useCallback, useEffect, useState } from "react";
+
+import { isEmpty } from "lodash";
+import { useAppLocation } from "./useAppLocation";
 
 type InstallationData = {
   configuration: { [key: string]: any };
@@ -19,13 +20,20 @@ export const useInstallationData = (): [InstallationData, Function, boolean] => 
   const [installationData, setInstallation] = useAtom(installationDataAtom);
 
   useEffect(() => {
-    (async () => {
-      if (!isEmpty(installationData)) return;
-      setLoading(true);
-      const data: InstallationData = await location.installation.getInstallationData();
-      setInstallation(data);
-      setLoading(false);
-    })();
+    // console.log("useEffect useInstallationData");
+    if (!isEmpty(installationData)) return;
+    setLoading(true);
+    location.installation
+      .getInstallationData()
+      .then((data: InstallationData) => {
+        setInstallation(data);
+      })
+      .catch((err: any) => {
+        console.error(err);
+      })
+      .finally(() => {
+        setLoading(false);
+      });
   }, [installationData, location, setLoading, setInstallation]);
 
   const setInstallationData = useCallback(
