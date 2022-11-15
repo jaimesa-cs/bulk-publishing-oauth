@@ -1,15 +1,17 @@
 import { AxiosPromise, AxiosRequestConfig, AxiosResponse } from "axios";
 import { IEnvironmentConfig, ILocaleConfig, IReference, OPERATIONS } from "./models/models";
+import {
+  MAX_BULK_PUBLISHING_REQUESTS,
+  MAX_ENTRIES_ADDED_AT_ONCE,
+  MAX_ITEMS_PER_RELEASE,
+  MAX_RELEASE_NAME_LENGTH,
+} from "./constants";
 import { addLogErrorAtom, addLogInfoAtom, operationInProgressAtom } from "./store";
 
 import { useAtom } from "jotai";
 import useContentstackAxios from "../../hooks/oauth/useContetstackAxios";
 import useMessageWithDetails from "../../hooks/oauth/useMessageWithDetails";
 
-const MAX_BULK_PUBLISHING_REQUESTS = 10;
-const MAX_ITEMS_PER_RELEASE = 500;
-const MAX_ENTRIES_ADDED_AT_ONCE = 25;
-const MAX_RELEASE_NAME_LENGTH = 50;
 export interface IPublishInstruction {
   entries?: {
     uid: string;

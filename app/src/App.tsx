@@ -23,10 +23,11 @@ function App() {
   return (
     <ErrorBoundary>
       <BulkPublishingProvider>
-        <MarketplaceAppWrapper ignoreRoutes={["/callback"]}>
+        <MarketplaceAppWrapper ignoreRoutes={["/callback", "/ping"]}>
           <Routes>
             <Route path="/" element={<div>Nothing to show here</div>} />
             <Route path="/callback" element={<OAuthCallback />} />
+            <Route path="/ping" element={<p>Pong!</p>} />
             <Route
               path="/custom-field"
               element={
