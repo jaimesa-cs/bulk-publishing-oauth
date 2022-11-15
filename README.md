@@ -156,7 +156,7 @@ Once authorized you should see something similar to this:
 
 ![Authorized](./readme-images/app-authorized.png)
 
-**Note:** if the `Authorize` button doesn't go away, simply close and reopen the sidebar.
+**Note:** Make sure your API app is configured and running properly, and that the app can access it. (ensure CORS are properly setup). If everything is properly configured and the `Authorize` button doesn't go away, simply close and reopen the sidebar.
 
 In order for the app to allow you to publish, you will need to at least select one locale and one environment.
 The app will save your selections when you leave the app, so the next time you come back the same selections are kept.
