@@ -30,10 +30,10 @@ The API application uses `.env` for its configuration and all you need to know i
 PORT=8080
 
 #OAuth Client ID
-CS_CLIENT_ID=ZX14kOakcbf1xuRc
+CS_CLIENT_ID=your_client_id
 
 #OAuth Client Secret
-CS_CLIENT_SECRET=RBJlSA9mBB0OKodkb1fbC6FaSL5fkesu
+CS_CLIENT_SECRET=your_client_secret
 
 #OAuth Redirect URI
 CS_REDIRECT_URI=http://localhost:3000/callback
