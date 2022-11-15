@@ -78,30 +78,30 @@ Once you have your applications setup and running, it is time to configure the a
 
 First you will need access to the `Developer Hub` and `Marketplace` functionality to proceed. You can check whether those options are enabled by clicking on the top-most left corner Contentstack icon and checking which options are available in the left navigation bar:
 
-![Top Left Corner](./readme/top-icon.png)
+![Top Left Corner](./readme-images/top-icon.png)
 
 These are the options:
 
-![Options](./readme/options.png)
+![Options](./readme-images/options.png)
 
 Next, navigate to `Developer Hub` and install your application following these steps:
 
 1. Click the `+ New App` button on the top corner.
 1. Fill in the form, making sure you choose `Stack App`.
 1. Provide a `Name` and `Description` to your app.
-   ![New App](./readme/new-app.png)
+   ![New App](./readme-images/new-app.png)
 1. Then you will see the application details, such as its `APP UID`, which will be necessary for configuration later on.
-   ![App Details](./readme/app-main-details.png)
+   ![App Details](./readme-images/app-main-details.png)
 1. Next,navigate to the **UI Locations** section.
 1. You will need configure two locations:
    1. `App Configuration`, pointing to your app configuration route in the app. e.g. `/app-configuration`.
-      ![App Configuration](./readme/app-configuration-route.png)
+      ![App Configuration](./readme-images/app-configuration-route.png)
    1. `Entry Sidebar`, pointing to your app sidebar extension route in the app. e.g. `/buik-publishing`.
-      ![Entry Sidebar](./readme/entry-sidebar-route.png)
+      ![Entry Sidebar](./readme-images/entry-sidebar-route.png)
 1. Next, you will enable and configure oAuth. Navigate to the **OAuth** section.
 1. Copy your `Client ID` and `Client Secret` since you will need this for configuration when you install the app in any given stack.
 1. Similarly, provide with a `Redirect URL`. This should match your app's callback host and route. e.g. `http://localhost:3000/callback`.
-   ![OAuth Details](./readme/oauth-details.png)
+   ![OAuth Details](./readme-images/oauth-details.png)
 1. Next, you will need to provide the oAuth scopes so the application can execute the required actions within Contentstack. The application uses an oAuth `User Token`, so the actor of such actions can be tracked, as those actions enabled by the defined scopes here will be executed under the user's persona. You will need to click the `+ User Scopes` button to add the following scopes:
    1. `cm:entry:publish`
    1. `cm:asset:publish`
@@ -114,13 +114,13 @@ Next, navigate to `Developer Hub` and install your application following these s
    1. `cm.release:read`
    1. `cm.release:write`
    1. `cm.release:deploy`
-      ![Scopes](./readme/user-scopes.png)
+      ![Scopes](./readme-images/user-scopes.png)
 1. Once those scopes have been added you can hit `Save` and leave this page.
 1. Next you will install the app in any given stack. Navigate back to `Developer Hub`.
 1. Click on the app you just created.
 1. On the top right corner click the `Install App` button.
 1. Select the stack where you want to install the app and accept the terms and conditions.
-   ![Stack, Terms & Conditions](./readme/stack-and-accept-terms.png)
+   ![Stack, Terms & Conditions](./readme-images/stack-and-accept-terms.png)
 1. Click `Install`.
 1. On the next screen you will need to provide with some json configuration as follows:
 1. Once you have updated the values with the values you copied earlier, click `Update Configuration` and wait for the saving confirmation.
@@ -143,29 +143,32 @@ Next, navigate to `Developer Hub` and install your application following these s
 19. Next, click the `Save` button on the bottom right corner and, again, wait for confirmation.
 1. Next, navigate to your stack, select an entry and click the widget icon in the right panel.
 1. Select your application from the dropdown. Yo should see something like this:
-   ![Entry Sidebar App](./readme/widget.png)
+   ![Entry Sidebar App](./readme-images/widget.png)
 1. In the next section we describe the available functionality in the App.
 
 ### User Manual
 
 The first time you access the app you will need to authorize it. Click the `Authorize` button and follow the prompts. You will need to select the appropriate Stack (in case you have access to more than one) and allow the app to perform the requested actions.
 
-![Authorize](./readme/authorize.png)
+![Authorize](./readme-images/authorize.png)
 
 Once authorized you should see something similar to this:
 
-![Authorized](./readme/app-authorized.png)
+![Authorized](./readme-images/app-authorized.png)
 
 **Note:** if the `Authorize` button doesn't go away, simply close and reopen the sidebar.
 
 In order for the app to allow you to publish, you will need to at least select one locale and one environment.
 The app will save your selections when you leave the app, so the next time you come back the same selections are kept.
 The app will `Auto Reload References` if such option is checked. This will reload the references table every time you check/uncheck a locale.
-![Selections](./readme/some-selections.png)
+![Selections](./readme-images/some-selections.png)
 
 The app allows two types of publishing operations:
 
 - `Publish`: this option will bulk-publish all the entries and assets in teh references table.
 - `Release`: this option will create a release for each locale with the appropriate entries and assets for it. Additionally if the `Deploy Release` checkbox is checked, the releases will be automatically deployed.
+
+![Release Published](./readme-images/release-published.png)
+![Release Details](./readme-images/release-details.png)
 
 And that's it for the most part. **Happy publishing!!** 🥳
