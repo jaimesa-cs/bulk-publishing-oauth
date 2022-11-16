@@ -58,8 +58,6 @@ function useLocalStorage<T>(originalKey: string, initialValue: T): [T | undefine
       // Save to local storage
       const encryption = new EncryptionService();
       window.localStorage.setItem(key, encryption.encrypt(JSON.stringify(newValue)));
-
-      console.log("setStoredValue", newValue);
       // Save state
       setStoredValue(newValue);
 
