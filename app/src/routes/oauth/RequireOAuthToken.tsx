@@ -11,7 +11,6 @@ const RequireOAuthToken = () => {
   React.useEffect(() => {
     //Try to refresh token if possible
     if (isValid !== null && !isValid) {
-      console.log("Token is not valid, trying to refresh");
       asyncRefresh();
     }
   }, [asyncRefresh, isValid]);

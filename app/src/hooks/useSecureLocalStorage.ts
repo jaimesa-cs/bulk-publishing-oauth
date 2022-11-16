@@ -15,20 +15,20 @@ const getSecureKey = (key: string) => `${KEY_PREFIX}${key}`;
 
 type SetValue<T> = Dispatch<SetStateAction<T>>;
 
-function useLocalStorage<T>(originalKey: string, initialValue: T): [T, SetValue<T>] {
+function useLocalStorage<T>(originalKey: string, initialValue: T): [T | undefined, SetValue<T | undefined>] {
   const [key] = useState(getSecureKey(originalKey));
   // Get from local storage then
   // parse stored json or return initialValue
-  const readValue = useCallback((): T => {
+  const readValue = useCallback((): T | undefined => {
     // Prevent build error "window is undefined" but keeps working
     if (typeof window === "undefined") {
-      return initialValue;
+      return undefined;
     }
 
     try {
       const item = window.localStorage.getItem(key);
       if (item === null) {
-        return initialValue;
+        return undefined;
       }
       const encryption = new EncryptionService();
       const sValue = encryption.decrypt(item);
@@ -41,11 +41,11 @@ function useLocalStorage<T>(originalKey: string, initialValue: T): [T, SetValue<
 
   // State to store our value
   // Pass initial state function to useState so logic is only executed once
-  const [storedValue, setStoredValue] = useState<T>(readValue);
+  const [storedValue, setStoredValue] = useState<T | undefined>(readValue);
 
   // Return a wrapped version of useState's setter function that ...
   // ... persists the new value to localStorage.
-  const setValue: SetValue<T> = useEventCallback((value) => {
+  const setValue: SetValue<T | undefined> = useEventCallback((value) => {
     // Prevent build error "window is undefined" but keeps working
     if (typeof window === "undefined") {
       console.warn(`Tried setting localStorage key “${key}” even though environment is not a client`);
@@ -59,6 +59,7 @@ function useLocalStorage<T>(originalKey: string, initialValue: T): [T, SetValue<
       const encryption = new EncryptionService();
       window.localStorage.setItem(key, encryption.encrypt(JSON.stringify(newValue)));
 
+      console.log("setStoredValue", newValue);
       // Save state
       setStoredValue(newValue);
 
@@ -79,7 +80,9 @@ function useLocalStorage<T>(originalKey: string, initialValue: T): [T, SetValue<
       if ((event as StorageEvent)?.key && (event as StorageEvent).key !== key) {
         return;
       }
-      setStoredValue(readValue());
+
+      const newValue = readValue();
+      setStoredValue(newValue);
     },
     [key, readValue]
   );

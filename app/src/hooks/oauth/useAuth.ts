@@ -12,6 +12,10 @@ const useAuth = () => {
 
   const [isValid, setIsValid] = React.useState(false);
 
+  const canRefresh = React.useCallback(() => {
+    return auth && auth.refresh_token && !isValid;
+  }, [auth, isValid]);
+
   React.useEffect(() => {
     setIsValid(isValidToken(auth));
   }, [auth]);
@@ -20,7 +24,7 @@ const useAuth = () => {
     auth: (auth as KeyValueObj) || null,
     setAuth,
     isValid: isValid,
-    canRefresh: isValid && auth?.refresh_token,
+    canRefresh: canRefresh(),
   };
 };
 
