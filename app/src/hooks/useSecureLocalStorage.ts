@@ -1,7 +1,9 @@
 import { Dispatch, SetStateAction, useCallback, useEffect, useState } from "react";
 import { useEventCallback, useEventListener } from "usehooks-ts";
 
-import secureLocalStorage from "react-secure-storage";
+import EncryptionService from "../utils/secure-storage/encryption";
+
+const KEY_PREFIX = "@secure-storage.";
 
 declare global {
   interface WindowEventMap {
@@ -9,21 +11,28 @@ declare global {
   }
 }
 
-export type SetValue<T> = Dispatch<SetStateAction<T>>;
+const getSecureKey = (key: string) => `${KEY_PREFIX}${key}`;
 
-function useLocalStorage<T>(key: string, initialValue?: T): [T, SetValue<T>] {
+type SetValue<T> = Dispatch<SetStateAction<T>>;
+
+function useLocalStorage<T>(originalKey: string, initialValue: T): [T, SetValue<T>] {
+  const [key] = useState(getSecureKey(originalKey));
   // Get from local storage then
   // parse stored json or return initialValue
-  const readValue = useCallback((): T | undefined => {
+  const readValue = useCallback((): T => {
     // Prevent build error "window is undefined" but keeps working
     if (typeof window === "undefined") {
-      return initialValue as T;
+      return initialValue;
     }
 
     try {
-      const item = secureLocalStorage.getItem(key) as T;
-      // console.log("🚀 ~ file: useLocalStorage.ts ~ line 23 ~ readValue ~ item", key, item);
-      return item ? item : initialValue;
+      const item = window.localStorage.getItem(key);
+      if (item === null) {
+        return initialValue;
+      }
+      const encryption = new EncryptionService();
+      const sValue = encryption.decrypt(item);
+      return item ? (parseJSON(sValue) as T) : initialValue;
     } catch (error) {
       console.warn(`Error reading localStorage key “${key}”:`, error);
       return initialValue;
@@ -32,7 +41,7 @@ function useLocalStorage<T>(key: string, initialValue?: T): [T, SetValue<T>] {
 
   // State to store our value
   // Pass initial state function to useState so logic is only executed once
-  const [storedValue, setStoredValue] = useState<T | undefined>(readValue);
+  const [storedValue, setStoredValue] = useState<T>(readValue);
 
   // Return a wrapped version of useState's setter function that ...
   // ... persists the new value to localStorage.
@@ -44,14 +53,11 @@ function useLocalStorage<T>(key: string, initialValue?: T): [T, SetValue<T>] {
 
     try {
       // Allow value to be a function so we have the same API as useState
-      const newValue = value instanceof Function ? value(storedValue as T) : value;
+      const newValue = value instanceof Function ? value(storedValue) : value;
 
-      if (newValue === undefined) {
-        secureLocalStorage.removeItem(key);
-      } else {
-        // Save to local storage
-        secureLocalStorage.setItem(key, newValue as object);
-      }
+      // Save to local storage
+      const encryption = new EncryptionService();
+      window.localStorage.setItem(key, encryption.encrypt(JSON.stringify(newValue)));
 
       // Save state
       setStoredValue(newValue);
@@ -85,7 +91,31 @@ function useLocalStorage<T>(key: string, initialValue?: T): [T, SetValue<T>] {
   // See: useLocalStorage()
   useEventListener("local-storage", handleStorageChange);
 
-  return [storedValue as T, setValue];
+  return [storedValue, setValue];
 }
 
 export default useLocalStorage;
+
+// A wrapper for "JSON.parse()"" to support "undefined" value
+function parseJSON<T>(value: string | null): T | undefined {
+  try {
+    return value === "undefined" ? undefined : JSON.parse(value ?? "");
+  } catch {
+    console.log("parsing error on", { value });
+    return undefined;
+  }
+}
+
+export const getExistingSecureStorageValue = <T>(originalKey: string): T => {
+  const key = getSecureKey(originalKey);
+  if (typeof window === "undefined") {
+    return {} as T;
+  }
+  const value = window.localStorage.getItem(key);
+  if (value === null) {
+    return {} as T;
+  }
+  const encryption = new EncryptionService();
+  const sValue = encryption.decrypt(value);
+  return sValue ? (parseJSON(sValue) as T) : ({} as T);
+};

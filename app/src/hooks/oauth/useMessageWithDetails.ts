@@ -1,9 +1,6 @@
-import { getInitialTokenValue, isValidToken } from "./utils";
 import { logAtom, showLogAtom } from "../../components/bulk-publishing-sidebar/store";
 import { showErrorWithDetails, showSuccessWithDetails } from "../../utils/notifications";
 
-import { KeyValueObj } from "../../types";
-import React from "react";
 import { useAtom } from "jotai";
 
 export const AUTH_KEY = "csat";

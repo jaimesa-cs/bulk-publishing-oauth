@@ -8,6 +8,7 @@ import {
 } from "./constants";
 import { addLogErrorAtom, addLogInfoAtom, operationInProgressAtom } from "./store";
 
+import { sleep } from "../../utils";
 import { useAtom } from "jotai";
 import useContentstackAxios from "../../hooks/oauth/useContetstackAxios";
 import useMessageWithDetails from "../../hooks/oauth/useMessageWithDetails";
@@ -280,12 +281,4 @@ const groupEntriesByLocale = (entries: IReference[], locales: ILocaleConfig[]): 
   entryMap["assets"] = entries.filter((entry) => entry.isAsset);
   // console.log("entryMap", entryMap);
   return entryMap;
-};
-
-const sleep = (ms: number) => {
-  return new Promise((resolve) =>
-    setTimeout(() => {
-      resolve(true);
-    }, ms)
-  );
 };

@@ -1,28 +1,26 @@
-import { getInitialTokenValue, isValidToken } from "./utils";
+import useSecureLocalStorage, { getExistingSecureStorageValue } from "../useSecureLocalStorage";
 
 import { KeyValueObj } from "../../types";
 import React from "react";
-import useLocalStorage from "../useLocalStorage";
+import { isValidToken } from "./utils";
 
 export const AUTH_KEY = "csat";
 
 const useAuth = () => {
-  const [auth, setAuth] = useLocalStorage<KeyValueObj | undefined>(AUTH_KEY, getInitialTokenValue());
+  const initialValue = getExistingSecureStorageValue<KeyValueObj>(AUTH_KEY);
+  const [auth, setAuth] = useSecureLocalStorage<KeyValueObj>(AUTH_KEY, initialValue);
 
-  const [isValid, setIsValid] = React.useState(isValidToken(auth));
+  const [isValid, setIsValid] = React.useState(false);
 
-  // React.useEffect(() => {
-  //   if (auth) {
-  //     console.log("useAuth, auth changed", auth);
-  //     setIsValid(isValidToken(auth));
-  //   }
-  // }, []);
+  React.useEffect(() => {
+    setIsValid(isValidToken(auth));
+  }, [auth]);
 
   return {
-    auth,
+    auth: (auth as KeyValueObj) || null,
     setAuth,
-    isValid: isValidToken(auth),
-    canRefresh: !isValid && auth?.refresh_token,
+    isValid: isValid,
+    canRefresh: isValid && auth?.refresh_token,
   };
 };
 

@@ -16,4 +16,20 @@ const utils = {
   mergeObjects,
 };
 
+export const parseJSON = <T>(value: string | null): T => {
+  try {
+    return value === "undefined" ? undefined : JSON.parse(value ?? "");
+  } catch {
+    console.log("parsing error on", { value });
+    return undefined as T;
+  }
+};
+export const sleep = (ms: number) => {
+  return new Promise((resolve) =>
+    setTimeout(() => {
+      resolve(true);
+    }, ms)
+  );
+};
+
 export default utils;

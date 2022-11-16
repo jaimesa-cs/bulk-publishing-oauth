@@ -6,11 +6,10 @@ import {
   localesAtom,
   reloadOnChangeLocalesAtom,
 } from "../components/bulk-publishing-sidebar/store";
+import useSecureLocalStorage, { getExistingSecureStorageValue } from "./useSecureLocalStorage";
 
 import React from "react";
-import secureLocalStorage from "react-secure-storage";
 import { useAtom } from "jotai";
-import useLocalStorage from "./useLocalStorage";
 
 export const SELECTIONS_KEY = "csselections";
 
@@ -22,12 +21,11 @@ export interface IUserSelections {
   reloadOnChangeLocales: boolean;
 }
 
-export const getLocalStorageValue = <T>(): T => {
-  return secureLocalStorage.getItem(SELECTIONS_KEY) as T;
-};
-
 const useUserSelections = () => {
-  const [selections, setSelections] = useLocalStorage(SELECTIONS_KEY, getLocalStorageValue<IUserSelections>());
+  const [selections, setSelections] = useSecureLocalStorage<IUserSelections>(
+    SELECTIONS_KEY,
+    getExistingSecureStorageValue<IUserSelections>(SELECTIONS_KEY)
+  );
   const [allLocalesChecked] = useAtom(allLocalesCheckedAtom);
   const [allEnvironmentsChecked] = useAtom(allEnvironmentsCheckedAtom);
   const [environments] = useAtom(environmentsAtom);

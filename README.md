@@ -65,14 +65,9 @@ const MAX_ENTRIES_ADDED_AT_ONCE = 25; // The maximum number of entries that can 
 const MAX_RELEASE_NAME_LENGTH = 50; // The maximum length of a release name
 ```
 
-#### `~/app/.env`
+Once your applications is setup with the appropriate configuration settings, you can run both your `app` application as well as your `api` application. You will need these running to setup the extension app in Contetnstack.
 
-```properties
-# Secure Local Storage Key
-REACT_APP_SECURE_LOCAL_STORAGE_HASH_KEY=c8e4271f-4151-4ebb-99ae-317bf24ea1d7
-```
-
-Once you have your applications setup and running, it is time to configure the app in Contenstack. The following sections describe the process:
+The following sections describe the Contentstack setup process:
 
 ## Configuring the App in Contentstack
 
@@ -96,7 +91,7 @@ Next, navigate to `Developer Hub` and install your application following these s
 1. You will need configure two locations:
    1. `App Configuration`, pointing to your app configuration route in the app. e.g. `/app-configuration`.
       ![App Configuration](./readme-images/app-configuration-route.png)
-   1. `Entry Sidebar`, pointing to your app sidebar extension route in the app. e.g. `/buik-publishing`.
+   1. `Entry Sidebar`, pointing to your app sidebar extension route in the app. e.g. `/bulk-publish`.
       ![Entry Sidebar](./readme-images/entry-sidebar-route.png)
 1. Next, you will enable and configure oAuth. Navigate to the **OAuth** section.
 1. Copy your `Client ID` and `Client Secret` since you will need this for configuration when you install the app in any given stack.
@@ -128,7 +123,7 @@ Next, navigate to `Developer Hub` and install your application following these s
 ```json
 {
   "name": "Bulk Publishing App",
-  "apiKey": "${your_api_key},"
+  "apiKey": "${your_api_key}",
   "oauth": {
     "authorizeUrl": "https://app.contentstack.com/#!/apps/${appId}/authorize",
     "clientId": "${your_client_id}",
