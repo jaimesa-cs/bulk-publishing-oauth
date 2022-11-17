@@ -376,7 +376,7 @@ function ReferencesTable() {
    */
   const loadReferences = React.useCallback(
     (reference: IReference): void => {
-      // console.log("Loading referernces for", reference.entry.title, reference.uid, reference);
+      // console.log("Loading references for", reference.entry.title, reference.uid, reference);
 
       let promises = [...getEntryPromises(reference.entry, reference.locale), ...getAssetPromises(reference.entry)];
       Promise.all(promises)

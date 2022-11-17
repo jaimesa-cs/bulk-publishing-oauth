@@ -6,7 +6,7 @@ import {
   localesAtom,
   reloadOnChangeLocalesAtom,
 } from "../components/bulk-publishing-sidebar/store";
-import useSecureLocalStorage, { getExistingSecureStorageValue } from "./useSecureLocalStorage";
+import useSecureLocalStorage, { getExistingSecureStorageValue } from "./secure-local-storage/useSecureLocalStorage";
 
 import React from "react";
 import { useAtom } from "jotai";

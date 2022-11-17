@@ -16,8 +16,8 @@ export default function useRefresh() {
           setAuth(response.data);
         })
         .catch((err) => {
-          console.log("asyncRefreshErr", err);
-          setAuth({});
+          // console.log("asyncRefreshErr", err);
+          setAuth(undefined);
         })
         .finally(() => {});
     }

@@ -1,7 +1,7 @@
 import { Dispatch, SetStateAction, useCallback, useEffect, useState } from "react";
 import { useEventCallback, useEventListener } from "usehooks-ts";
 
-import EncryptionService from "../utils/secure-storage/encryption";
+import EncryptionService from "./encryption";
 
 const KEY_PREFIX = "@secure-storage.";
 
@@ -15,7 +15,10 @@ const getSecureKey = (key: string) => `${KEY_PREFIX}${key}`;
 
 type SetValue<T> = Dispatch<SetStateAction<T>>;
 
-function useLocalStorage<T>(originalKey: string, initialValue: T): [T | undefined, SetValue<T | undefined>] {
+function useLocalStorage<T>(
+  originalKey: string,
+  initialValue: T | undefined
+): [T | undefined, SetValue<T | undefined>] {
   const [key] = useState(getSecureKey(originalKey));
   // Get from local storage then
   // parse stored json or return initialValue
@@ -28,16 +31,16 @@ function useLocalStorage<T>(originalKey: string, initialValue: T): [T | undefine
     try {
       const item = window.localStorage.getItem(key);
       if (item === null) {
-        return undefined;
+        return initialValue;
       }
       const encryption = new EncryptionService();
       const sValue = encryption.decrypt(item);
-      return item ? (parseJSON(sValue) as T) : initialValue;
+      return item ? (parseJSON(sValue) as T) : undefined;
     } catch (error) {
       console.warn(`Error reading localStorage key “${key}”:`, error);
-      return initialValue;
+      return undefined;
     }
-  }, [initialValue, key]);
+  }, [key]);
 
   // State to store our value
   // Pass initial state function to useState so logic is only executed once
@@ -100,23 +103,23 @@ export default useLocalStorage;
 // A wrapper for "JSON.parse()"" to support "undefined" value
 function parseJSON<T>(value: string | null): T | undefined {
   try {
-    return value === "undefined" ? undefined : JSON.parse(value ?? "");
+    return value === "undefined" || value === null ? undefined : JSON.parse(value ?? "");
   } catch {
     console.log("parsing error on", { value });
     return undefined;
   }
 }
 
-export const getExistingSecureStorageValue = <T>(originalKey: string): T => {
+export const getExistingSecureStorageValue = <T>(originalKey: string): T | undefined => {
   const key = getSecureKey(originalKey);
   if (typeof window === "undefined") {
-    return {} as T;
+    return undefined;
   }
   const value = window.localStorage.getItem(key);
   if (value === null) {
-    return {} as T;
+    return undefined;
   }
   const encryption = new EncryptionService();
   const sValue = encryption.decrypt(value);
-  return sValue ? (parseJSON(sValue) as T) : ({} as T);
+  return sValue ? parseJSON(sValue) : undefined;
 };

@@ -9,7 +9,8 @@ const EncryptionService = class {
   secureKey: string = "";
 
   constructor() {
-    this.secureKey = getBrowserFingerprint().toString();
+    const secureKey = getBrowserFingerprint().toString();
+    this.secureKey = secureKey;
   }
 
   /**

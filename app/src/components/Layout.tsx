@@ -11,9 +11,15 @@ const Layout = () => {
     <div className="entry-sidebar">
       <div className="entry-sidebar-container">
         <div className="app-component-content">
-          {loading ? <LoadingButton /> : <h6>References</h6>}
-          <br />
-          <Outlet />
+          {loading ? (
+            <LoadingButton />
+          ) : (
+            <>
+              <h6>References</h6>
+              <br />
+              <Outlet />
+            </>
+          )}
         </div>
       </div>
     </div>

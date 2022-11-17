@@ -5,6 +5,7 @@ import { Button } from "@contentstack/venus-components";
 import ContentstackAppSDK from "@contentstack/app-sdk";
 import Extension from "@contentstack/app-sdk/dist/src/extension";
 import { KeyValueObj } from "./types";
+import LoadingButton from "./components/bulk-publishing-sidebar/loading-button";
 import { isNull } from "lodash";
 import { useAppConfig } from "./hooks/useAppConfig";
 import { useAppSdk } from "./hooks/useAppSdk";
@@ -55,10 +56,12 @@ export const MarketplaceAppWrapper: React.FC<ProviderProps> = ({ children, ignor
   }
   if (!failed && (isNull(appSdk) || isNull(appConfig))) {
     return (
-      <div>
-        <Button buttonType="secondary" isLoading={true}>
-          ...
-        </Button>
+      <div className="entry-sidebar">
+        <div className="entry-sidebar-container">
+          <div className="app-component-content">
+            <LoadingButton />
+          </div>
+        </div>
       </div>
     );
   }
