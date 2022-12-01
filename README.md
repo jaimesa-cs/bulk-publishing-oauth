@@ -98,7 +98,13 @@ Next, navigate to `Developer Hub` and install your application following these s
 1. Similarly, provide with a `Redirect URL`. This should match your app's callback host and route. e.g. `http://localhost:3000/callback`.
    ![OAuth Details](./readme-images/oauth-details.png)
 1. Next, you will need to provide the oAuth scopes so the application can execute the required actions within Contentstack. The application uses an oAuth `User Token`, so the actor of such actions can be tracked, as those actions enabled by the defined scopes here will be executed under the user's persona. You will need to click the `+ User Scopes` button to add the following scopes:
+   1. `cm.content-types.management:read`
+   1. `cm.content-type:read`
+   1. `cm.entry:read`
+   1. `cm.entries.management:read`
    1. `cm:entry:publish`
+   1. `cm.assets.management:read`
+   1. `cm.asset:read`
    1. `cm:asset:publish`
    1. `cm.environments.management:read`
    1. `cm.languages.management:read`

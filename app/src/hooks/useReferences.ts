@@ -20,6 +20,7 @@ import {
   reloadOnChangeLocalesAtom,
   resetProgressAtom,
   setDataStatusAtom,
+  uiReadyAtom,
   updateReferencesAtom,
 } from "../components/bulk-publishing-sidebar/store";
 
@@ -36,6 +37,7 @@ export const appSdkRefAtom = atom<Extension | null>(null);
  * To be used during Sdk initialisation
  */
 export const useReferences = (): any => {
+  const [, setUiReady] = useAtom(uiReadyAtom);
   const [dataStatus] = useAtom(dataStatusAtom);
   const [environments] = useAtom(environmentsAtom);
   const [locales] = useAtom(localesAtom);
@@ -60,12 +62,13 @@ export const useReferences = (): any => {
     const references: IReference[] = Object.values(dataStatus.allEntries).filter(
       (r) => selectedKeys.indexOf(r.uniqueKey) > -1
     );
-
-    publish(
-      references,
-      locales.filter((l) => l.checked),
-      environments.filter((e) => e.checked)
-    );
+    console.log("SelectedKeys", selectedKeys);
+    console.log("references", references);
+    // publish(
+    //   references,
+    //   locales.filter((l) => l.checked),
+    //   environments.filter((e) => e.checked)
+    // );
   }, [dataStatus.allEntries, dataStatus.selectedReferences, publish, locales, environments]);
 
   const publishEntriesAsRelease = React.useCallback(() => {
@@ -100,6 +103,7 @@ export const useReferences = (): any => {
   React.useEffect(() => {
     async function getReferences() {
       if (reloadOnChangeLocales && entry !== null) {
+        setUiReady(false);
         const localesArray = locales.filter((l) => l.checked).map((l) => l.code);
         setOperationInProgress(OPERATIONS.LOADING_REFERENCES);
         setLoadingReferences(true);
@@ -108,9 +112,11 @@ export const useReferences = (): any => {
         updateReferences(references);
         setOperationInProgress(OPERATIONS.NONE);
         setLoadingReferences(false);
+        setUiReady(true);
       }
     }
     getReferences();
+
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [entry, locales, reloadOnChangeLocales]);
 

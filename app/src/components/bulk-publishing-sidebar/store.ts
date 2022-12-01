@@ -64,6 +64,7 @@ export const localesAtom = atom<ILocaleConfig[]>([]);
 export const errorAtom = atom<string | undefined>(undefined);
 export const showErrorAtom = atom<boolean>(false);
 export const deployReleasesAtom = atom<boolean>(false);
+export const uiReadyAtom = atom<boolean>(false);
 
 export const warningMessageAtom = atom<string | undefined>(undefined);
 export const showWarningMessageAtom = atom<boolean>(false);
