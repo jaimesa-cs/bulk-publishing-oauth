@@ -10,6 +10,7 @@ const RequireOAuthToken = () => {
 
   React.useEffect(() => {
     //Try to refresh token if possible
+    // console.log("RequireOAuthToken useEffect");
     if (canRefresh) {
       console.log("Token is not valid, trying to refresh");
       asyncRefresh();

@@ -1,15 +1,16 @@
+import { ASSET_REGEXP, IEnvironmentConfig, ILocaleConfig, IReference, OPERATIONS, REF_REGEXP } from "./models/models";
 import { AxiosPromise, AxiosRequestConfig, AxiosResponse } from "axios";
-import { IEnvironmentConfig, ILocaleConfig, IReference, OPERATIONS } from "./models/models";
 import {
   MAX_BULK_PUBLISHING_REQUESTS,
   MAX_ENTRIES_ADDED_AT_ONCE,
   MAX_ITEMS_PER_RELEASE,
   MAX_RELEASE_NAME_LENGTH,
 } from "./constants";
-import { addLogErrorAtom, addLogInfoAtom, operationInProgressAtom } from "./store";
+import { WritableAtom, useAtom } from "jotai";
+import { addLogErrorAtom, addLogInfoAtom, currentEntryAtom, operationInProgressAtom } from "./store";
 
+import React from "react";
 import { sleep } from "../../utils";
-import { useAtom } from "jotai";
 import useContentstackAxios from "../../hooks/oauth/useContetstackAxios";
 import useMessageWithDetails from "../../hooks/oauth/useMessageWithDetails";
 
@@ -36,8 +37,18 @@ export interface IEntryMap {
 
 interface SdkResult {
   axios: (query: string, options?: AxiosRequestConfig) => AxiosPromise;
+  getAsset: (uid: string, options?: AxiosRequestConfig) => AxiosPromise;
+  getEntry: (contentTypeUid: string, uid: string, locale: string, options?: AxiosRequestConfig) => AxiosPromise;
+  getEntryLanguages: (contentTypeUid: string, uid: string, options?: AxiosRequestConfig) => AxiosPromise;
   getLocales: (options?: AxiosRequestConfig) => AxiosPromise;
   getEnvironments: (options?: AxiosRequestConfig) => AxiosPromise;
+  getEntryReferences: (
+    contentTypeUid: string,
+    uid: string,
+    locales: string[],
+    references: IReference[],
+    options?: AxiosRequestConfig
+  ) => any;
   publishAsRelease: (
     entry: any,
     references: IReference[],
@@ -61,22 +72,199 @@ interface SdkResult {
  */
 export const useOauthCsApi = (): SdkResult => {
   const [, setOperationInProgress] = useAtom(operationInProgressAtom);
+
   const [, addToLogInfo] = useAtom(addLogInfoAtom);
   const [, addToLogError] = useAtom(addLogErrorAtom);
+  const [, setCurrentEntry] = useAtom(currentEntryAtom);
 
   const axios = useContentstackAxios();
   const { showSuccess, showError } = useMessageWithDetails();
+
+  const getAssetReference = React.useCallback(
+    async (uid: string, depth: number, options?: AxiosRequestConfig): Promise<IReference | null> => {
+      try {
+        const response = await axios(`/v3/assets/${uid}`, options);
+        return {
+          uniqueKey: `${response.data.asset.uid}`,
+          uid: response.data.asset.uid,
+          isAsset: true,
+          content_type_uid: "_asset",
+          entry: response.data.asset,
+          locale: "",
+          references: [],
+          depth: depth,
+        };
+      } catch (e) {
+        console.error(e);
+        return null;
+      }
+    },
+
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    []
+  );
+
+  const getEntryReference = React.useCallback(
+    async (
+      contentTypeUid: string,
+      uid: string,
+      locale: string,
+      depth: number,
+      options?: AxiosRequestConfig
+    ): Promise<IReference | null> => {
+      try {
+        const response = await axios(`/v3/content_types/${contentTypeUid}/entries/${uid}?locale=${locale}`, options);
+        const languagesResponse = await axios(`/v3/content_types/${contentTypeUid}/entries/${uid}/locales`, options);
+
+        return {
+          uniqueKey: `${response.data.entry.uid}_${locale}`,
+          uid: response.data.entry.uid,
+          isAsset: false,
+          content_type_uid: contentTypeUid,
+          entry: response.data.entry,
+          references: [],
+          locale: locale,
+          locales: languagesResponse.data.locales,
+          depth: depth,
+        };
+      } catch (e) {
+        console.log(e);
+        return null;
+      }
+    },
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    []
+  );
+
+  const getRegexEntryReferences = React.useCallback(
+    async (entry: any, locale: string, depth: number): Promise<IReference[]> => {
+      const references: IReference[] = [];
+      let refs: string[] = [];
+      const sJson = JSON.stringify(entry, null, 2);
+
+      const refMatches = sJson.matchAll(REF_REGEXP);
+      for (const rMatch of refMatches) {
+        const refUid = rMatch[1] as string;
+        const refCtUid = rMatch[2] as string;
+        if (!refs.includes(refUid)) {
+          const entryRef = await getEntryReference(refCtUid, refUid, locale, depth);
+          if (entryRef !== null) {
+            references.push(entryRef);
+          }
+          refs.push(refUid);
+        }
+      }
+      return references;
+    },
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    []
+  );
+
+  const getRegexAssetReferences = React.useCallback(
+    async (entry: any, depth: number): Promise<IReference[]> => {
+      const references: IReference[] = [];
+      let refs: string[] = [];
+      const sJson = JSON.stringify(entry, null, 2);
+      const assetMatches = sJson.matchAll(ASSET_REGEXP);
+      for (const aMatch of assetMatches) {
+        const refUid = aMatch[1] as string;
+        if (!refs.includes(refUid)) {
+          // promises.push(sdk.getAsset(refUid, ""));
+          const assetRef = await getAssetReference(refUid, depth);
+          if (assetRef !== null) {
+            references.push(assetRef);
+          }
+          refs.push(refUid);
+        }
+      }
+
+      return references;
+    },
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    []
+  );
+
+  const getReferencesRecursively = React.useCallback(
+    async (
+      contentTypeUid: string,
+      uid: string,
+      locales: string[],
+      references: IReference[],
+      depth: number,
+      options?: AxiosRequestConfig
+    ): Promise<IReference[]> => {
+      let refs: IReference[] = references && references.length > 0 ? [...references] : [];
+      for (let i = 0; i < locales.length; i++) {
+        const locale = locales[i];
+
+        const uniqueKey = `${uid}_${locale}`;
+        if (!refs.find((r) => r.uniqueKey === uniqueKey && r.content_type_uid === contentTypeUid)) {
+          const reference = await getEntryReference(contentTypeUid, uid, locale, depth, options);
+          if (reference != null) {
+            setCurrentEntry(`${reference.entry.title} (${locale})`);
+            const e = await getRegexEntryReferences(reference.entry, reference.locale, depth);
+            const a = await getRegexAssetReferences(reference.entry, depth);
+            const allRefs = [...e];
+            const newAssets = [];
+            for (let j = 0; j < a.length; j++) {
+              // console.log("current refs2", refs, "asset ref", a[j].uniqueKey);
+              if (refs.some((r) => r.uniqueKey === a[j].uniqueKey)) {
+                continue;
+              }
+              newAssets.push(a[j]);
+            }
+
+            reference.references = allRefs.map((r) => {
+              return r.uid;
+            });
+
+            refs = [...refs, reference, ...newAssets];
+
+            const entryReferences = allRefs.filter((r) => !r.isAsset);
+
+            for (const ref of entryReferences) {
+              refs = [
+                ...(await getReferencesRecursively(ref.content_type_uid!, ref.uid, [locale], refs, depth++, options)),
+              ];
+            }
+          }
+        } else {
+          console.debug(`Skipping ${uniqueKey} as it is already processed`);
+        }
+      }
+      return refs;
+    },
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    []
+  );
+
   return {
     axios: (query: string, options?: AxiosRequestConfig): AxiosPromise => {
       return axios(`${query}`, options);
     },
-
+    getAsset: (uid: string, options?: AxiosRequestConfig): AxiosPromise => {
+      return axios(`/v3/assets/${uid}`, options);
+    },
+    getEntry: (contentTypeUid: string, uid: string, locale: string, options?: AxiosRequestConfig): AxiosPromise => {
+      return axios(`/v3/content_types/${contentTypeUid}/entries/${uid}?locale=${locale}`, options);
+    },
+    getEntryLanguages: (contentTypeUid: string, uid: string, options?: AxiosRequestConfig): AxiosPromise => {
+      return axios(`/v3/content_types/${contentTypeUid}/entries/${uid}/locales`, options);
+    },
     getLocales: (options?: AxiosRequestConfig<any>): AxiosPromise => {
       return axios(`/v3/locales`, options);
     },
     getEnvironments: (options?: AxiosRequestConfig<any>): AxiosPromise => {
-      const url = `/v3/environments`;
-      return axios(url, options);
+      return axios(`/v3/environments`, options);
+    },
+    getEntryReferences: async (
+      contentTypeUid: string,
+      uid: string,
+      locales: string[],
+      references: IReference[],
+      options?: AxiosRequestConfig
+    ): Promise<IReference[]> => {
+      return await getReferencesRecursively(contentTypeUid, uid, locales, references, 1, options);
     },
     publishAsRelease: async (
       entry: any,
@@ -190,7 +378,7 @@ export const useOauthCsApi = (): SdkResult => {
           showError(`Error publishing entries`);
         }
       }
-      showSuccess(`References successfuly published!.`);
+      showSuccess(`References successfully published!.`);
       setOperationInProgress(OPERATIONS.NONE);
     },
   };

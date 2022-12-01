@@ -9,27 +9,25 @@ const useAuth = () => {
   const initialValue = getExistingSecureStorageValue<KeyValueObj>(AUTH_KEY);
   const [auth, setAuth] = useSecureLocalStorage<KeyValueObj>(AUTH_KEY, initialValue);
 
-  const isValidToken = React.useCallback(() => {
-    // console.log("useAuthEffect", auth);
-    return (
+  return {
+    auth: (auth as KeyValueObj) || null,
+    setAuth,
+    isValid:
       auth &&
       auth.access_token &&
       auth.refresh_token &&
       auth.expires_at &&
-      Date.now() < new Date(auth.expires_at).getTime()
-    );
-  }, [auth]);
-
-  const canRefresh = React.useCallback(() => {
-    const can = auth && auth.refresh_token && !isValidToken();
-    return can || false;
-  }, [auth, isValidToken]);
-
-  return {
-    auth: (auth as KeyValueObj) || null,
-    setAuth,
-    isValid: isValidToken(),
-    canRefresh: canRefresh(),
+      Date.now() < new Date(auth.expires_at).getTime(),
+    canRefresh:
+      !(
+        auth &&
+        auth.access_token &&
+        auth.refresh_token &&
+        auth.expires_at &&
+        Date.now() < new Date(auth.expires_at).getTime()
+      ) &&
+      auth &&
+      auth.refresh_token,
   };
 };
 

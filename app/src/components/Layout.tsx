@@ -1,25 +1,46 @@
 import "./layout.css";
 
-import LoadingButton from "./bulk-publishing-sidebar/loading-button";
+import {
+  canRefreshAtom,
+  currentEntryAtom,
+  errorAtom,
+  loadingReferencesAtom,
+  showWarningMessageAtom,
+} from "./bulk-publishing-sidebar/store";
+
+import Options from "./bulk-publishing-sidebar/options";
 import { Outlet } from "react-router-dom";
-import { loadingAtom } from "./bulk-publishing-sidebar/store";
+import ShowWarning from "./bulk-publishing-sidebar/show-warning";
 import { useAtom } from "jotai";
+import useAuth from "../hooks/oauth/useAuth";
+
+function Error({ error }: { error: string }) {
+  return <>Error...: {JSON.stringify(error)}</>;
+}
 
 const Layout = () => {
-  const [loading] = useAtom(loadingAtom);
+  const { isValid } = useAuth();
+  const [error] = useAtom(errorAtom);
+  const [, setCanRefresh] = useAtom(canRefreshAtom);
+  const [loadingReferences] = useAtom(loadingReferencesAtom);
+  const [showWarning] = useAtom(showWarningMessageAtom);
+  const [currentEntry] = useAtom(currentEntryAtom);
+  const reload = () => {
+    setCanRefresh(() => {
+      window.location.reload();
+      return false;
+    });
+  };
   return (
     <div className="entry-sidebar">
       <div className="entry-sidebar-container">
         <div className="app-component-content">
-          {loading ? (
-            <LoadingButton />
-          ) : (
-            <>
-              <h6>References</h6>
-              <br />
-              <Outlet />
-            </>
-          )}
+          {loadingReferences && currentEntry ? <h6>{`Processing ${currentEntry}...`}</h6> : null}
+          <br />
+          {error && <Error error={error} />}
+          {isValid && showWarning && <ShowWarning reload={reload} />}
+          {isValid && !showWarning && !error && <Options />}
+          <Outlet />
         </div>
       </div>
     </div>

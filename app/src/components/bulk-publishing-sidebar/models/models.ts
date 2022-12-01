@@ -6,6 +6,12 @@ export const REF_REGEXP: RegExp = /"uid":[\s]+"(.*)",[\s]+"_content_type_uid":[\
 
 export interface IBulkPublishingConfig extends KeyValueObj {}
 
+export interface IProgress {
+  percentage: number;
+  current: number;
+  total: number;
+  label?: string;
+}
 export interface ICheckable {
   name: string;
   checked: boolean;
@@ -43,7 +49,6 @@ export interface IBaseItem {
 }
 
 export interface IProcessedItem extends IBaseItem {
-  locale: string;
   completed: boolean;
 }
 export interface IReference {
@@ -56,6 +61,7 @@ export interface IReference {
   locales?: any;
   locale: string;
   parent?: string;
+  depth?: number;
 }
 
 export interface IStatus {
