@@ -187,7 +187,7 @@ function ReferencesTable() {
       >
         Release
       </Button>
-      <hr />
+      <hr className="separator-bar" />
       <Checkbox
         onClick={() => {
           setDeployReleases((dr) => !dr);
