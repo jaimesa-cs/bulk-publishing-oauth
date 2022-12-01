@@ -13,10 +13,11 @@ export default function useRefresh() {
           refreshToken: auth?.refresh_token,
         })
         .then((response) => {
+          console.log("useRefresh, response", response);
           setAuth(response.data);
         })
         .catch((err) => {
-          // console.log("asyncRefreshErr", err);
+          console.log("asyncRefreshErr", err);
           setAuth(undefined);
         })
         .finally(() => {});

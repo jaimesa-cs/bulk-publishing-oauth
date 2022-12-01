@@ -27,6 +27,7 @@ const useContentstackAxios = () => {
             config.headers["api_key"] = apiKey;
           }
         }
+        // console.log("Request Interceptor", config);
         return config;
       },
       (error) => Promise.reject(error)
@@ -42,7 +43,6 @@ const useContentstackAxios = () => {
         if (error?.response?.status === 403 && !prevRequest?.sent) {
           prevRequest.sent = true;
           const data = await syncRefresh();
-          console.log("Response Interceptor, refreshing token", data);
           setAuth(data);
           prevRequest.headers["authorization"] = `Bearer ${data.access_token}`;
           return axios(prevRequest);
