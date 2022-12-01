@@ -18,7 +18,6 @@ import {
   localesAtom,
   operationInProgressAtom,
   reloadOnChangeLocalesAtom,
-  resetProgressAtom,
   setDataStatusAtom,
   uiReadyAtom,
   updateReferencesAtom,
@@ -62,13 +61,12 @@ export const useReferences = (): any => {
     const references: IReference[] = Object.values(dataStatus.allEntries).filter(
       (r) => selectedKeys.indexOf(r.uniqueKey) > -1
     );
-    console.log("SelectedKeys", selectedKeys);
-    console.log("references", references);
-    // publish(
-    //   references,
-    //   locales.filter((l) => l.checked),
-    //   environments.filter((e) => e.checked)
-    // );
+
+    publish(
+      references,
+      locales.filter((l) => l.checked),
+      environments.filter((e) => e.checked)
+    );
   }, [dataStatus.allEntries, dataStatus.selectedReferences, publish, locales, environments]);
 
   const publishEntriesAsRelease = React.useCallback(() => {
@@ -103,16 +101,18 @@ export const useReferences = (): any => {
   React.useEffect(() => {
     async function getReferences() {
       if (reloadOnChangeLocales && entry !== null) {
-        setUiReady(false);
         const localesArray = locales.filter((l) => l.checked).map((l) => l.code);
-        setOperationInProgress(OPERATIONS.LOADING_REFERENCES);
-        setLoadingReferences(true);
-        clearDataStatus();
-        const references = await getEntryReferences(contentTypeUid, entry.uid, localesArray, []);
-        updateReferences(references);
-        setOperationInProgress(OPERATIONS.NONE);
-        setLoadingReferences(false);
-        setUiReady(true);
+        if (localesArray.length > 0) {
+          setUiReady(false);
+          setOperationInProgress(OPERATIONS.LOADING_REFERENCES);
+          setLoadingReferences(true);
+          clearDataStatus();
+          const references = await getEntryReferences(contentTypeUid, entry.uid, localesArray, []);
+          updateReferences(references);
+          setOperationInProgress(OPERATIONS.NONE);
+          setLoadingReferences(false);
+          setUiReady(true);
+        }
       }
     }
     getReferences();

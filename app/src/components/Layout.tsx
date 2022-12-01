@@ -37,7 +37,12 @@ const Layout = () => {
     <div className="entry-sidebar">
       <div className="entry-sidebar-container">
         <div className="app-component-content">
-          {loadingReferences && currentEntry ? <h6>{`Processing ${currentEntry}...`}</h6> : null}
+          {loadingReferences && currentEntry ? (
+            <>
+              <h5>Loading nested references</h5>
+              <h6>{`Processing ${currentEntry}...`}</h6>
+            </>
+          ) : null}
           <br />
           <div style={{ display: uiReady ? undefined : "none" }}>
             {error && <Error error={error} />}
