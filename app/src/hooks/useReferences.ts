@@ -113,10 +113,11 @@ export const useReferences = (): any => {
           setLoadingReferences(false);
           setUiReady(true);
         }
+      } else {
+        setUiReady(true);
       }
     }
     getReferences();
-
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [entry, locales, reloadOnChangeLocales]);
 

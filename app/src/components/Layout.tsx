@@ -40,6 +40,7 @@ const Layout = () => {
           {loadingReferences && currentEntry ? (
             <>
               <h5>Loading nested references</h5>
+              <hr className="separator-bar" />
               <h6>{`Processing ${currentEntry}...`}</h6>
             </>
           ) : null}

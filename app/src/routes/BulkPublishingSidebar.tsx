@@ -1,9 +1,4 @@
-import {
-  canRefreshAtom,
-  errorAtom,
-  loadingReferencesAtom,
-  showWarningMessageAtom,
-} from "../components/bulk-publishing-sidebar/store";
+import { errorAtom, showWarningMessageAtom } from "../components/bulk-publishing-sidebar/store";
 
 import React from "react";
 import ReferencesTable from "../components/bulk-publishing-sidebar/references-table";
