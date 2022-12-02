@@ -6,11 +6,11 @@ import {
   MAX_ITEMS_PER_RELEASE,
   MAX_RELEASE_NAME_LENGTH,
 } from "./constants";
-import { WritableAtom, useAtom } from "jotai";
 import { addLogErrorAtom, addLogInfoAtom, currentEntryAtom, operationInProgressAtom } from "./store";
 
 import React from "react";
 import { sleep } from "../../utils";
+import { useAtom } from "jotai";
 import useContentstackAxios from "../../hooks/oauth/useContetstackAxios";
 import useMessageWithDetails from "../../hooks/oauth/useMessageWithDetails";
 
@@ -368,7 +368,7 @@ export const useOauthCsApi = (): SdkResult => {
         const instruction = instructions[i];
         try {
           await axios(`/v3/bulk/publish`, { method: "POST", data: instruction });
-          await sleep(1000);
+          await sleep(1000); //! ONE SECOND DELAY TO AVOID API LIMITS
           [...(instruction.entries || []), ...(instruction.assets || [])].forEach((item) => {
             addToLogInfo(`Published ${item.uid}.`);
           });
@@ -434,9 +434,9 @@ const getPublishInstructions = (
   const localesMap = groupEntriesByLocale(entries, locales);
   Object.keys(localesMap).forEach((locale) => {
     const localeEntries = localesMap[locale];
-    const e = localeEntries.filter((entry) => !entry.isAsset);
-    while (e.length > 0) {
-      const currentEntries = e.splice(0, MAX_BULK_PUBLISHING_REQUESTS);
+    // const e = localeEntries.filter((entry) => !entry.isAsset);
+    while (localeEntries.length > 0) {
+      const currentEntries = localeEntries.splice(0, MAX_BULK_PUBLISHING_REQUESTS);
       const instruction: IPublishInstruction = {};
       if (currentEntries.length > 0) {
         if (locale !== "assets") {
@@ -445,10 +445,10 @@ const getPublishInstructions = (
             content_type: entry.content_type_uid,
             locale,
           }));
-          instruction.locales = locales.map((l) => l.code);
+          instruction.locales = [locale];
         } else {
           instruction.assets = currentEntries.map((asset) => ({ uid: asset.uid }));
-          instruction.locales = [locale];
+          instruction.locales = locales.map((l) => l.code);
         }
       }
 
@@ -463,6 +463,7 @@ const getPublishInstructions = (
 
 const groupEntriesByLocale = (entries: IReference[], locales: ILocaleConfig[]): IEntryMap => {
   const entryMap: IEntryMap = {};
+  console.log("Entries", entries);
   locales.forEach((locale) => {
     entryMap[locale.code] = entries.filter((entry) => entry.locale === locale.code && !entry.isAsset);
   });

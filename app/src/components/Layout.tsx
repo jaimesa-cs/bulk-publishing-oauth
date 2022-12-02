@@ -6,6 +6,7 @@ import {
   errorAtom,
   loadingReferencesAtom,
   showWarningMessageAtom,
+  uiReadyAtom,
 } from "./bulk-publishing-sidebar/store";
 
 import Options from "./bulk-publishing-sidebar/options";
@@ -25,6 +26,7 @@ const Layout = () => {
   const [loadingReferences] = useAtom(loadingReferencesAtom);
   const [showWarning] = useAtom(showWarningMessageAtom);
   const [currentEntry] = useAtom(currentEntryAtom);
+  const [uiReady] = useAtom(uiReadyAtom);
   const reload = () => {
     setCanRefresh(() => {
       window.location.reload();
@@ -35,11 +37,19 @@ const Layout = () => {
     <div className="entry-sidebar">
       <div className="entry-sidebar-container">
         <div className="app-component-content">
-          {loadingReferences && currentEntry ? <h6>{`Processing ${currentEntry}...`}</h6> : null}
+          {loadingReferences && currentEntry ? (
+            <>
+              <h5>Loading nested references</h5>
+              <hr className="separator-bar" />
+              <h6>{`Processing ${currentEntry}...`}</h6>
+            </>
+          ) : null}
           <br />
-          {error && <Error error={error} />}
-          {isValid && showWarning && <ShowWarning reload={reload} />}
-          {isValid && !showWarning && !error && <Options />}
+          <div style={{ display: uiReady ? undefined : "none" }}>
+            {error && <Error error={error} />}
+            {isValid && showWarning && <ShowWarning reload={reload} />}
+            {isValid && !showWarning && !error && <Options />}
+          </div>
           <Outlet />
         </div>
       </div>

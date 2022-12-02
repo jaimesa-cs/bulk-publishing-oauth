@@ -18,8 +18,8 @@ import {
   localesAtom,
   operationInProgressAtom,
   reloadOnChangeLocalesAtom,
-  resetProgressAtom,
   setDataStatusAtom,
+  uiReadyAtom,
   updateReferencesAtom,
 } from "../components/bulk-publishing-sidebar/store";
 
@@ -36,6 +36,7 @@ export const appSdkRefAtom = atom<Extension | null>(null);
  * To be used during Sdk initialisation
  */
 export const useReferences = (): any => {
+  const [, setUiReady] = useAtom(uiReadyAtom);
   const [dataStatus] = useAtom(dataStatusAtom);
   const [environments] = useAtom(environmentsAtom);
   const [locales] = useAtom(localesAtom);
@@ -101,13 +102,19 @@ export const useReferences = (): any => {
     async function getReferences() {
       if (reloadOnChangeLocales && entry !== null) {
         const localesArray = locales.filter((l) => l.checked).map((l) => l.code);
-        setOperationInProgress(OPERATIONS.LOADING_REFERENCES);
-        setLoadingReferences(true);
-        clearDataStatus();
-        const references = await getEntryReferences(contentTypeUid, entry.uid, localesArray, []);
-        updateReferences(references);
-        setOperationInProgress(OPERATIONS.NONE);
-        setLoadingReferences(false);
+        if (localesArray.length > 0) {
+          setUiReady(false);
+          setOperationInProgress(OPERATIONS.LOADING_REFERENCES);
+          setLoadingReferences(true);
+          clearDataStatus();
+          const references = await getEntryReferences(contentTypeUid, entry.uid, localesArray, []);
+          updateReferences(references);
+          setOperationInProgress(OPERATIONS.NONE);
+          setLoadingReferences(false);
+          setUiReady(true);
+        }
+      } else {
+        setUiReady(true);
       }
     }
     getReferences();

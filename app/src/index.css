@@ -285,3 +285,7 @@ a {
   width: 1rem;
   height: 1rem;
 }
+
+hr.separator-bar {
+  border-color: rgba(108, 92, 231, 0.2);
+}

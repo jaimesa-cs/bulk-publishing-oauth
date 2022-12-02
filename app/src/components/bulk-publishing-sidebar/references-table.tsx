@@ -13,6 +13,7 @@ import {
   localesAtom,
   operationInProgressAtom,
   reloadOnChangeLocalesAtom,
+  uiReadyAtom,
 } from "./store";
 
 import LogDetails from "./log-details";
@@ -27,6 +28,7 @@ function ReferencesTable() {
   const [locales] = useAtom(localesAtom);
   const [deployReleases] = useAtom(deployReleasesAtom);
   const [operationInProgress] = useAtom(operationInProgressAtom);
+  const [uiReady] = useAtom(uiReadyAtom);
   const [viewBy, updateViewBy] = React.useState("Comfortable");
   const [, setDeployReleases] = useAtom(deployReleasesAtom);
   const [reloadOnChangeLocales] = useAtom(reloadOnChangeLocalesAtom);
@@ -122,90 +124,82 @@ function ReferencesTable() {
   const { dataStatus, setDataStatusPartial, publishEntries, publishEntriesAsRelease, publishDisabled } =
     useReferences();
   return (
-    <>
-      {!loading && (
-        <Accordion title={"References"} renderExpanded className="bp-accordion">
-          <div style={{ paddingLeft: 5 }}>
-            <InfiniteScrollTable
-              canRefresh={!reloadOnChangeLocales}
-              loading={loading}
-              initialSelectedRowIds={dataStatus.initiallySelected}
-              disabled={operationInProgress !== OPERATIONS.NONE}
-              canSearch={false}
-              totalCounts={dataStatus.data.length}
-              data={dataStatus.data}
-              isLoading={operationInProgress !== OPERATIONS.NONE}
-              fetchTableData={() => {
-                // reload();
-              }}
-              loadMoreItems={() => {}}
-              itemStatusMap={dataStatus.statuses}
-              columns={getColumns()}
-              uniqueKey={"uniqueKey"}
-              hiddenColumns={["uniqueKey"]}
-              isRowSelect
-              getSelectedRow={getSelectedRow}
-              getViewByValue={(selectedViewBy: any) => {
-                updateViewBy(selectedViewBy);
-              }}
-              emptyHeading={"No references"}
-              emptyDescription={
-                locales.some((l) => l.checked)
-                  ? undefined
-                  : "Please, select at least one locale to load the references."
-              }
-              viewSelector={true}
-              columnSelector={false}
-              tableHeight={400}
-            />
-          </div>
-        </Accordion>
-      )}
-      <>
-        <br />
-        <div>
-          <Button
-            disabled={publishDisabled}
-            onClick={() => {
-              if (dataStatus && dataStatus.selectedReferences && locales) {
-                publishEntries();
-              }
-            }}
-            isLoading={operationInProgress === OPERATIONS.PUBLISHING}
-            icon={"PublishWhite"}
-            buttonType="primary"
-          >
-            Publish
-          </Button>
-          &nbsp;
-          <Button
-            disabled={publishDisabled}
-            onClick={() => {
-              if (dataStatus && dataStatus.selectedReferences && locales) {
-                publishEntriesAsRelease();
-              }
-            }}
-            isLoading={operationInProgress === OPERATIONS.PUBLISHING}
-            icon={"DeployOutline"}
-            buttonType="primary"
-          >
-            Release
-          </Button>
-          <hr />
-          <Checkbox
-            onClick={() => {
-              setDeployReleases((dr) => !dr);
-            }}
-            label={"Deploy Release"}
-            checked={deployReleases}
+    <div style={{ display: uiReady ? undefined : "none" }}>
+      <Accordion title={"References"} renderExpanded className="bp-accordion">
+        <div style={{ paddingLeft: 5 }}>
+          <InfiniteScrollTable
+            canRefresh={!reloadOnChangeLocales}
+            loading={loading}
+            initialSelectedRowIds={dataStatus.initiallySelected}
             disabled={operationInProgress !== OPERATIONS.NONE}
-            isButton={false}
-            isLabelFullWidth={false}
+            canSearch={false}
+            totalCounts={dataStatus.data.length}
+            data={dataStatus.data}
+            isLoading={operationInProgress !== OPERATIONS.NONE}
+            fetchTableData={() => {
+              // reload();
+            }}
+            loadMoreItems={() => {}}
+            itemStatusMap={dataStatus.statuses}
+            columns={getColumns()}
+            uniqueKey={"uniqueKey"}
+            hiddenColumns={["uniqueKey"]}
+            isRowSelect
+            getSelectedRow={getSelectedRow}
+            getViewByValue={(selectedViewBy: any) => {
+              updateViewBy(selectedViewBy);
+            }}
+            emptyHeading={"No references"}
+            emptyDescription={
+              locales.some((l) => l.checked) ? undefined : "Please, select at least one locale to load the references."
+            }
+            viewSelector={true}
+            columnSelector={false}
+            tableHeight={400}
           />
         </div>
-      </>
+      </Accordion>
+      <br />
+      <Button
+        disabled={publishDisabled}
+        onClick={() => {
+          if (dataStatus && dataStatus.selectedReferences && locales) {
+            publishEntries();
+          }
+        }}
+        isLoading={operationInProgress === OPERATIONS.PUBLISHING}
+        icon={"PublishWhite"}
+        buttonType="primary"
+      >
+        Publish
+      </Button>
+      &nbsp;
+      <Button
+        disabled={publishDisabled}
+        onClick={() => {
+          if (dataStatus && dataStatus.selectedReferences && locales) {
+            publishEntriesAsRelease();
+          }
+        }}
+        isLoading={operationInProgress === OPERATIONS.PUBLISHING}
+        icon={"DeployOutline"}
+        buttonType="primary"
+      >
+        Release
+      </Button>
+      <hr className="separator-bar" />
+      <Checkbox
+        onClick={() => {
+          setDeployReleases((dr) => !dr);
+        }}
+        label={"Deploy Release"}
+        checked={deployReleases}
+        disabled={publishDisabled}
+        isButton={false}
+        isLabelFullWidth={false}
+      />
       <LogDetails />
-    </>
+    </div>
   );
 }
 
